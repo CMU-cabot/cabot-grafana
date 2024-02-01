@@ -36,6 +36,7 @@ services:
     volumes:
       - ./docker/home:/home/developer/
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
+      - ./cabot-common/cabot_msgs:/home/developer/ros2_ws/src/cabot_msgs
     command:
       - ./launch.sh
       - launch

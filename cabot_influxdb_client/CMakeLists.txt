@@ -23,6 +23,7 @@ endif()
 
 install(PROGRAMS
   ./script/test_client.py
+  ./script/pose_log_client.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

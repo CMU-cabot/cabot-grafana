@@ -1,9 +1,14 @@
 FROM ros:humble
 
-RUN sudo apt update && sudo apt install --no-install-recommends \
-	curl
+RUN apt update && apt install --no-install-recommends -y \
+	curl \
+	python3-pip
 #	&& \
 #	rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install influxdb-client
+
+COPY launch.sh /launch.sh
 
 ### make user environment
 
@@ -24,4 +29,6 @@ USER $USERNAME
 
 ENV HOME /home/$USERNAME
 
-WORKDIR $HOME
+RUN mkdir $HOME/ros2_ws
+
+WORKDIR $HOME/ros2_ws

@@ -19,16 +19,23 @@ services:
     image: grafana/grafana:10.3.1-ubuntu
     networks:
       - grafana_network
+    ports:
+      - 127.0.0.1:3000:3000
 
 
   debug:
     build:
       context: ./docker/debug
-    networks:
-      - grafana_network
+    network_mode: host  # to communicate with other ROS2 node
+    environment:
+      - RMW_IMPLEMENTATION
+      
     volumes:
       - ./docker/home:/home/developer/
-    command: tail -f /dev/null  ## do nothing, but keep container up for debug
+      - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
+    command:
+      - ./launch.sh
+      - launch
 
 
 networks:

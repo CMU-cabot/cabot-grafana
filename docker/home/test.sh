@@ -1,6 +1,6 @@
 #!/bin/bash
 
-host=influxdb
+host=localhost
 port=8086
 
 TOKEN=a54a87f7-73a0-4534-9741-ad7ff4e7d111

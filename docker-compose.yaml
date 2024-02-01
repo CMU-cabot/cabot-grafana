@@ -1,0 +1,38 @@
+version: "2.3"
+
+
+services:
+  influxdb:
+    build:
+      context: docker/influxdb
+    networks:
+      - grafana_network
+    ## for debug
+    ports:
+      - 127.0.0.1:8086:8086
+    ## for persistentency
+    # volumes:
+    #   - ./influxdb:/var/lib/influxdb
+
+
+  grafana:
+    image: grafana/grafana:10.3.1-ubuntu
+    networks:
+      - grafana_network
+
+
+  debug:
+    build:
+      context: ./docker/debug
+    networks:
+      - grafana_network
+    volumes:
+      - ./docker/home:/home/developer/
+    command: tail -f /dev/null  ## do nothing, but keep container up for debug
+
+
+networks:
+  grafana_network:
+    name: grafana_network
+
+  

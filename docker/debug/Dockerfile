@@ -2,7 +2,8 @@ FROM ros:humble
 
 RUN apt update && apt install --no-install-recommends -y \
 	curl \
-	python3-pip
+	python3-pip \
+	ros-humble-rmw-cyclonedds-cpp
 #	&& \
 #	rm -rf /var/lib/apt/lists/*
 

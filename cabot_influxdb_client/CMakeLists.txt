@@ -22,9 +22,12 @@ endif()
 
 
 install(PROGRAMS
-  ./script/test_client.py
+  ./script/diagnostics_client.py
   ./script/pose_log_client.py
+  ./script/test_client.py
   DESTINATION lib/${PROJECT_NAME}
-)
+  )
+
+install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
 
 ament_package()

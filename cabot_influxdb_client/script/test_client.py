@@ -6,6 +6,7 @@ from sensor_msgs.msg import Temperature
 import logging
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -39,7 +40,7 @@ class TemperatureSubscriber(Node):
 
     def listener_callback(self, msg):
         self.get_logger().info(f"Received temperature: {msg.temperature}")
-        point = Point("temperature").tag("unit", "celsius").field("value", msg.temperature)
+        point = Point("temperature").tag("unit", "celsius").field("value", msg.temperature).time(datetime.utcnow())
         try:
             write_api.write(bucket=bucket, org=org, record=point)
         except:

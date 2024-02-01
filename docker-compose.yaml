@@ -11,16 +11,20 @@ services:
     ports:
       - 127.0.0.1:8086:8086
     ## for persistentency
-    # volumes:
-    #   - ./influxdb:/var/lib/influxdb
+    volumes:
+      - ./influxdb:/var/lib/influxdb2
 
 
   grafana:
     image: grafana/grafana:10.3.1-ubuntu
     networks:
       - grafana_network
+    ## for debug
     ports:
       - 127.0.0.1:3000:3000
+    user: "472:472"
+    volumes:
+      - ./grafanadb:/var/lib/grafana
 
 
   debug:
@@ -29,7 +33,6 @@ services:
     network_mode: host  # to communicate with other ROS2 node
     environment:
       - RMW_IMPLEMENTATION
-      
     volumes:
       - ./docker/home:/home/developer/
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client

@@ -2,6 +2,8 @@
 
 trap ctrl_c INT QUIT TERM
 
+source util.sh
+
 function ctrl_c() {
     red "catch the signal"
     if [[ ! -z $dccom ]]; then
@@ -11,29 +13,41 @@ function ctrl_c() {
     exit
 }
 
-function red {
-    echo -en "\033[31m"  ## red
-    echo $@
-    echo -en "\033[0m"  ## reset color
+function help {
+    echo "Usage: $0 <option>"
+    echo ""
+    echo "-h                    "
+    echo "-i                    initial setup"
 }
-function blue {
-    echo -en "\033[36m"  ## blue
-    echo $@
-    echo -en "\033[0m"  ## reset color
-}
-function snore()
-{
-    local IFS
-    [[ -n "${_snore_fd:-}" ]] || exec {_snore_fd}<> <(:)
-    read ${1:+-t "$1"} -u $_snore_fd || :
-}
+
+pwd=$(pwd)
+scriptdir=$(dirname $0)
+cd $scriptdir
+scriptdir=$(pwd)
+
+initial_setup=0
+
+while getopts "hi" arg; do
+    case $arg in
+	h)
+	    help
+	    exit
+	    ;;
+	i)
+	    initial_setup=1
+	    ;;
+    esac
+done
+shift $((OPTIND-1))
 
 
 dccom="docker compose"
 eval "$dccom up -d"
 
-snore 5
-script -q -c "docker compose exec influxdb ./setup.sh" /dev/null &
+if [[ $initial_setup -eq 1 ]]; then
+    snore 5
+    script -q -c "docker compose exec influxdb ./setup.sh" /dev/null &
+fi
 
 while [ 1 -eq 1 ];
 do

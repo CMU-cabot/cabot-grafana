@@ -5,6 +5,7 @@
 ## build
 
 ```
+sudo chown -R 472:472 grafanadb
 ./setup-dependency.sh
 ./build-docker.sh -i -w
 ```

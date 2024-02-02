@@ -95,7 +95,7 @@
 			"refId": "A"
 		    }
 		],
-		"title": "Panel Title",
+		"title": "Navigation2 State",
 		"type": "state-timeline"
 	    },
 	    {
@@ -216,7 +216,7 @@
 			"refId": "A"
 		    }
 		],
-		"title": "Panel Title",
+		"title": "Robot Location",
 		"type": "geomap"
 	    },
 	    {
@@ -308,7 +308,7 @@
 			"refId": "A"
 		    }
 		],
-		"title": "Panel Title",
+		"title": "Temperature",
 		"type": "timeseries"
 	    }
 	],
@@ -319,14 +319,14 @@
 	    "list": []
 	},
 	"time": {
-	    "from": "now-6h",
+	    "from": "now-5m",
 	    "to": "now"
 	},
 	"timepicker": {},
 	"timezone": "",
 	"title": "CaBot Test",
 	"uid": "ae0eba99-4636-4fa2-a82f-e521e673694c",
-	"version": 6,
+	"version": 2,
 	"weekStart": ""
     }
 }

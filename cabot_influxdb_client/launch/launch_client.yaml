@@ -1,10 +1,32 @@
+
 launch:
+  - arg:
+      name: host
+      default: $(env CABOT_INFLUXDB_HOST http://localhost:8086)
+  - arg:
+      name: token
+      default: $(env CABOT_INFLUXDB_TOKEN a54a87f7-73a0-4534-9741-ad7ff4e7d111)
+  - arg:
+      name: org
+      default: $(env CABOT_INFLUXDB_ORG cabot)
+  - arg:
+      name: bucket
+      default: $(env CABOT_INFLUXDB_BUKET cabot)
+
   - node:
       pkg: cabot_influxdb_client
-      exec: test_client.py
-  - node:
-      pkg: cabot_influxdb_client
-      exec: pose_log_client.py
-  - node:
-      pkg: cabot_influxdb_client
-      exec: diagnostics_client.py
+      exec: client_node.py
+      name: client_node
+      param:
+        -
+          name: host
+          value: $(var host)
+        -
+          name: token
+          value: $(var token)
+        -
+          name: org
+          value: $(var org)
+        -
+          name: bucket
+          value: $(var bucket)

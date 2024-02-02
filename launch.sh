@@ -27,10 +27,9 @@ cd $scriptdir
 scriptdir=$(pwd)
 
 initial_setup=0
-launch_server=0
 dcfile="docker-compose.yaml"
 
-while getopts "hi" arg; do
+while getopts "his" arg; do
     case $arg in
 	h)
 	    help
@@ -40,7 +39,6 @@ while getopts "hi" arg; do
 	    initial_setup=1
 	    ;;
 	s)
-	    launch_server=1
 	    dcfile="docker-compose-local.yaml"
 	    ;;
     esac

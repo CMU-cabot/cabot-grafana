@@ -7,11 +7,11 @@ services:
       context: ./docker/client
     network_mode: host  # to communicate with other ROS2 node
     environment:
-      - RMW_IMPLEMENTATION=$(RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
-      - CABOT_INFLUXDB_HOST=${CABOT_INFLUXDB_HOST:-localhost}
-      - CABOT_INFLUXDB_TOKEN=${CABOT_INFLUXDB_TOKEN:-a54a87f7-73a0-4534-9741-ad7ff4e7d111}
-      - CABOT_INFLUXDB_ORG=${CABOT_INFLUXDB_ORG:-cabot}
-      - CABOT_INFLUXDB_BUCKET=${CABOT_INFLUXDB_ORG:-cabot}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+      - CABOT_INFLUXDB_HOST
+      - CABOT_INFLUXDB_TOKEN
+      - CABOT_INFLUXDB_ORG
+      - CABOT_INFLUXDB_BUCKET
     volumes:
       - ./docker/home:/home/developer/
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client

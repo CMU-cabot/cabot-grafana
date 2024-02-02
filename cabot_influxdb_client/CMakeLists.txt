@@ -22,6 +22,7 @@ endif()
 
 
 install(PROGRAMS
+  ./script/client_node.py
   ./script/diagnostics_client.py
   ./script/pose_log_client.py
   ./script/test_client.py

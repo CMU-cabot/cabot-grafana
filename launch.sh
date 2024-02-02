@@ -47,6 +47,10 @@ eval "$dccom up -d"
 if [[ $initial_setup -eq 1 ]]; then
     snore 5
     script -q -c "docker compose exec influxdb ./setup.sh" /dev/null &
+    snore 5
+    cd ./grafanaconfig
+    ./setup.sh
+    ./import.sh
 fi
 
 while [ 1 -eq 1 ];

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source common.sh
+host=localhost:3000
 
 api_key=$(jq -r .key api-key.txt)
 

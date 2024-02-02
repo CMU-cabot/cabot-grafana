@@ -17,7 +17,8 @@ function help {
     echo "Usage: $0 <option>"
     echo ""
     echo "-h                    "
-    echo "-i                    initial setup"
+    echo "-s                    launch local server"
+    echo "-i                    initial setup the servers"
 }
 
 pwd=$(pwd)
@@ -26,6 +27,8 @@ cd $scriptdir
 scriptdir=$(pwd)
 
 initial_setup=0
+launch_server=0
+dcfile="docker-compose.yaml"
 
 while getopts "hi" arg; do
     case $arg in
@@ -36,12 +39,16 @@ while getopts "hi" arg; do
 	i)
 	    initial_setup=1
 	    ;;
+	s)
+	    launch_server=1
+	    dcfile="docker-compose-local.yaml"
+	    ;;
     esac
 done
 shift $((OPTIND-1))
 
 
-dccom="docker compose"
+dccom="docker compose -f $dcfile"
 eval "$dccom up -d"
 
 if [[ $initial_setup -eq 1 ]]; then

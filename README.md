@@ -1,19 +1,36 @@
-# grafana-test
-
+# cabot-grafana
 
 
 ## build
 
 ```
-sudo chown -R 472:472 grafanadb
 ./setup-dependency.sh
 ./build-docker.sh -i -w
 ```
 
-## launch
+## launch cabot grafana clients
 
 ```
-./launch.sh -i # first time only
+# modify .env file
+./launch.sh
+```
+
+### Environment variables (.env)
+
+```
+CABOT_INFLUXDB_HOST
+CABOT_INFLUXDB_TOKEN
+CABOT_INFLUXDB_ORG
+CABOT_INFLUXDB_BUCKET
+```
+
+## launch local grafana/influxDB for development
+
+```
+sudo chown -R 472:472 grafanadb
+./launch.sh -s -i # first time only
+./launch.sh -s
+# second terminal
 ./launch.sh
 ```
 

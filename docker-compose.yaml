@@ -2,37 +2,16 @@ version: "2.3"
 
 
 services:
-  influxdb:
+  client:
     build:
-      context: docker/influxdb
-    networks:
-      - grafana_network
-    ## for debug
-    ports:
-      - 127.0.0.1:8086:8086
-    ## for persistentency
-    volumes:
-      - ./influxdb:/var/lib/influxdb2
-
-
-  grafana:
-    image: grafana/grafana:10.3.1-ubuntu
-    networks:
-      - grafana_network
-    ## for debug
-    ports:
-      - 127.0.0.1:3000:3000
-    user: "472:472"
-    volumes:
-      - ./grafanadb:/var/lib/grafana
-
-
-  debug:
-    build:
-      context: ./docker/debug
+      context: ./docker/client
     network_mode: host  # to communicate with other ROS2 node
     environment:
-      - RMW_IMPLEMENTATION
+      - RMW_IMPLEMENTATION=$(RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+      - CABOT_INFLUXDB_HOST=${CABOT_INFLUXDB_HOST:-localhost}
+      - CABOT_INFLUXDB_TOKEN=${CABOT_INFLUXDB_TOKEN:-a54a87f7-73a0-4534-9741-ad7ff4e7d111}
+      - CABOT_INFLUXDB_ORG=${CABOT_INFLUXDB_ORG:-cabot}
+      - CABOT_INFLUXDB_BUCKET=${CABOT_INFLUXDB_ORG:-cabot}
     volumes:
       - ./docker/home:/home/developer/
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
@@ -41,9 +20,6 @@ services:
       - ./launch.sh
       - launch
 
-
 networks:
   grafana_network:
     name: grafana_network
-
-  

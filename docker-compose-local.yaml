@@ -1,0 +1,27 @@
+version: "2.3"
+
+
+services:
+  influxdb:
+    build:
+      context: docker/influxdb
+    networks:
+      - grafana_network
+    ports:
+      - 127.0.0.1:8086:8086
+    volumes:
+      - ./influxdb:/var/lib/influxdb2
+
+
+  grafana:
+    image: grafana/grafana:10.3.1-ubuntu
+    networks:
+      - grafana_network
+    ports:
+      - 127.0.0.1:3000:3000
+    volumes:
+      - ./grafanadb:/var/lib/grafana
+
+networks:
+  grafana_network:
+    name: grafana_network

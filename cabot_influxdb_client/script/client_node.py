@@ -25,7 +25,7 @@ import rclpy
 from rclpy.node import Node
 from cabot_msgs.msg import PoseLog
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Path
+from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
 from sensor_msgs.msg import Image
@@ -33,29 +33,47 @@ from cv_bridge import CvBridge
 import cv2
 import base64
 
-from cabot_ui import geoutil, cabot_rclpy_util
+from cabot_ui import geoutil
+from cabot_ui.cabot_rclpy_util import CaBotRclpyUtil
 
-from influxdb_client import InfluxDBClient, Point
+from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 from datetime import datetime
 import time
+import sys
 
-class Throttle():
-    def __init__(self, interval):
-        self.interval = interval
-        self.last = time.time()
 
-    def check(self):
-        return time.time() > self.last + self.interval
+def throttle(interval_seconds):
+    """
+    A decorator to throttle function calls. The wrapped function can only be called
+    once every interval_seconds. Subsequent calls within the interval are ignored.
 
-    def reset(self):
-        self.last = time.time()
+    :param interval_seconds: The minimum time interval between function calls.
+    :return: The wrapper function.
+    """
+    def decorator(func):
+        last_called = [0]  # Use a mutable object to allow modification in nested scope
+        def wrapper(*args, **kwargs):
+            nonlocal last_called
+            current_time = time.time()
+            if current_time - last_called[0] >= interval_seconds:
+                last_called[0] = current_time
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def get_nanosec(stamp=None):
+    if stamp is None or \
+       stamp.sec < 1e6:
+        return int(time.time() * 1e9)
+    return int(stamp.sec * 1e9 + stamp.nanosec)
 
 
 class ClientNode(Node):
     def __init__(self):
         super().__init__("client_node")
-        cabot_rclpy_util.CaBotRclpyUtil.initialize(self)
+        CaBotRclpyUtil.initialize(self)
 
         self.host = self.declare_parameter("host", "").value
         self.token = self.declare_parameter("token", "").value
@@ -75,26 +93,18 @@ class ClientNode(Node):
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
 
         self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback, 10)
-        self.pose_log_throttle = Throttle(1.0)
-
         self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback, 10)
-        self.cmd_vel_throttle = Throttle(0.2)
-        
+        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback, 10)
-
+        # TODO: need to use path_to_goal
         self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
-
+        # TODO: use different topic for physical machine
         self.image_sub = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)        
         self.image_throttle = Throttle(10)
         self.bridge = CvBridge()
 
-        self.current_floor = 0
-
-
+    @throttle(1.0)
     def pose_log_callback(self, msg):
-        if not self.pose_log_throttle.check():
-            return
-        self.pose_log_throttle.reset()
         orientation = msg.pose.orientation
         (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
         point = Point("pose_data") \
@@ -102,18 +112,23 @@ class ClientNode(Node):
             .field("lng", msg.lng) \
             .field("floor", msg.floor) \
             .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
-            .time(datetime.utcnow())
-        self.current_floor = msg.floor
+            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
+    @throttle(0.2)
     def cmd_vel_callback(self, msg):
-        if not self.cmd_vel_throttle.check():
-            return
-        self.cmd_vel_throttle.reset()
-        v = math.sqrt(msg.linear.x * msg.linear.x + msg.linear.y * msg.linear.y + msg.linear.z * msg.linear.z)
-        point = Point("velocity") \
-            .field("value", v) \
-            .time(datetime.utcnow())
+        point = Point("cmd_vel") \
+            .field("linear", msg.linear.x) \
+            .field("angular", msg.angular.z) \
+            .time(get_nanosec(), WritePrecision.NS)
+        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+
+    @throttle(0.2)
+    def odom_callback(self, msg):
+        point = Point("odometry") \
+            .field("linear", msg.twist.twist.linear.x) \
+            .field("angular", msg.twist.twist.angular.z) \
+            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def diagnostics_callback(self, msg):
@@ -130,7 +145,7 @@ class ClientNode(Node):
         point = Point("diagnostic")\
             .tag("name", target_name)\
             .field("level", max_level)\
-            .time(datetime.utcnow())
+            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def path_callback(self, msg):
@@ -141,13 +156,14 @@ class ClientNode(Node):
             self.get_logger().info(f"{position}")
             self.get_logger().info(f"{localp} {self.anchor}")
             self.get_logger().info(f"{globalp}")
-            
+
             point = Point("plan") \
                 .field("lat", globalp.lat) \
                 .field("lng", globalp.lng) \
-                .time(datetime.utcnow())
+                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
+    @throttle(5)
     def image_callback(self, msg):
         if not self.image_throttle.check():
             return
@@ -156,7 +172,10 @@ class ClientNode(Node):
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         jpg_as_text = base64.b64encode(buffer).decode()
-        point = Point("image").tag("format", "jpeg").field("data", jpg_as_text)
+        point = Point("image") \
+            .tag("format", "jpeg") \
+            .field("data", jpg_as_text) \
+            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
 

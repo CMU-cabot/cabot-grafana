@@ -12,6 +12,9 @@ launch:
   - arg:
       name: bucket
       default: $(env CABOT_INFLUXDB_BUKET cabot)
+  - arg:
+      name: anchor_file
+      default: /home/developer/ros2_ws/src/anchor_file.yaml
 
   - node:
       pkg: cabot_influxdb_client
@@ -30,3 +33,6 @@ launch:
         -
           name: bucket
           value: $(var bucket)
+        -
+          name: anchor_file
+          value: $(var anchor_file)

@@ -10,7 +10,8 @@ RUN apt update && apt install --no-install-recommends -y \
 
 RUN pip3 install \
 	influxdb-client \
-	transforms3d
+	transforms3d \
+	pyproj
 
 COPY launch.sh /launch.sh
 

@@ -100,7 +100,6 @@ class ClientNode(Node):
         self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
         # TODO: use different topic for physical machine
         self.image_sub = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)        
-        self.image_throttle = Throttle(10)
         self.bridge = CvBridge()
 
     @throttle(1.0)
@@ -149,26 +148,20 @@ class ClientNode(Node):
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def path_callback(self, msg):
+        group = get_nanosec(msg.header.stamp)
         for pose in msg.poses:
             position = pose.pose.position
             localp = geoutil.Point(x=position.x, y=position.y)
             globalp = geoutil.local2global(localp, self.anchor)
-            self.get_logger().info(f"{position}")
-            self.get_logger().info(f"{localp} {self.anchor}")
-            self.get_logger().info(f"{globalp}")
-
             point = Point("plan") \
                 .field("lat", globalp.lat) \
                 .field("lng", globalp.lng) \
-                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                .field("group", group) \
+                .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     @throttle(5)
     def image_callback(self, msg):
-        if not self.image_throttle.check():
-            return
-        self.image_throttle.reset()
-
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         jpg_as_text = base64.b64encode(buffer).decode()

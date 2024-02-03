@@ -34,18 +34,110 @@
 			"color": {
 			    "mode": "thresholds"
 			},
+			"decimals": 2,
+			"fieldMinMax": false,
+			"mappings": [],
+			"max": 1,
+			"min": 0,
+			"thresholds": {
+			    "mode": "absolute",
+			    "steps": [
+				{
+				    "color": "green",
+				    "value": null
+				},
+				{
+				    "color": "red",
+				    "value": 80
+				}
+			    ]
+			},
+			"unit": "velocityms",
+			"unitScale": true
+		    },
+		    "overrides": []
+		},
+		"gridPos": {
+		    "h": 8,
+		    "w": 4,
+		    "x": 0,
+		    "y": 0
+		},
+		"id": 4,
+		"options": {
+		    "minVizHeight": 75,
+		    "minVizWidth": 75,
+		    "orientation": "auto",
+		    "reduceOptions": {
+			"calcs": [
+			    "lastNotNull"
+			],
+			"fields": "/^value$/",
+			"values": false
+		    },
+		    "showThresholdLabels": false,
+		    "showThresholdMarkers": false,
+		    "sizing": "auto"
+		},
+		"pluginVersion": "10.3.1",
+		"targets": [
+		    {
+			"datasource": {
+			    "type": "influxdb",
+			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+			},
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"velocity\")\n  |> filter(fn: (r) => r._field == \"value\")\n",
+			"refId": "A"
+		    }
+		],
+		"title": "Speed",
+		"type": "gauge"
+	    },
+	    {
+		"datasource": {
+		    "type": "influxdb",
+		    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+		},
+		"description": "",
+		"fieldConfig": {
+		    "defaults": {
+			"color": {
+			    "mode": "palette-classic"
+			},
 			"custom": {
-			    "fillOpacity": 70,
+			    "axisBorderShow": false,
+			    "axisCenteredZero": false,
+			    "axisColorMode": "text",
+			    "axisLabel": "",
+			    "axisPlacement": "auto",
+			    "barAlignment": 0,
+			    "drawStyle": "line",
+			    "fillOpacity": 0,
+			    "gradientMode": "none",
 			    "hideFrom": {
 				"legend": false,
 				"tooltip": false,
 				"viz": false
 			    },
 			    "insertNulls": false,
-			    "lineWidth": 0,
-			    "spanNulls": false
+			    "lineInterpolation": "linear",
+			    "lineWidth": 1,
+			    "pointSize": 5,
+			    "scaleDistribution": {
+				"type": "linear"
+			    },
+			    "showPoints": "auto",
+			    "spanNulls": false,
+			    "stacking": {
+				"group": "A",
+				"mode": "none"
+			    },
+			    "thresholdsStyle": {
+				"mode": "off"
+			    }
 			},
 			"mappings": [],
+			"max": 1,
 			"thresholds": {
 			    "mode": "absolute",
 			    "steps": [
@@ -65,21 +157,18 @@
 		},
 		"gridPos": {
 		    "h": 8,
-		    "w": 12,
-		    "x": 0,
+		    "w": 8,
+		    "x": 4,
 		    "y": 0
 		},
-		"id": 3,
+		"id": 1,
 		"options": {
-		    "alignValue": "left",
 		    "legend": {
+			"calcs": [],
 			"displayMode": "list",
 			"placement": "bottom",
 			"showLegend": true
 		    },
-		    "mergeValues": true,
-		    "rowHeight": 0.9,
-		    "showValue": "auto",
 		    "tooltip": {
 			"mode": "single",
 			"sort": "none"
@@ -91,12 +180,12 @@
 			    "type": "influxdb",
 			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
 			},
-			"query": "from(bucket: \"grafana-test\")\n  |> range(start: -1h)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"diagnostic\")\n  |> filter(fn: (r) => r._field == \"level\")\n",
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"velocity\")\n  |> filter(fn: (r) => r._field == \"value\")\n",
 			"refId": "A"
 		    }
 		],
-		"title": "Navigation2 State",
-		"type": "state-timeline"
+		"title": "Speed History",
+		"type": "timeseries"
 	    },
 	    {
 		"datasource": {
@@ -141,6 +230,11 @@
 		},
 		"id": 2,
 		"options": {
+		    "basemap": {
+			"config": {},
+			"name": "Layer 0",
+			"type": "osm-standard"
+		    },
 		    "controls": {
 			"mouseWheelZoom": true,
 			"showAttribution": true,
@@ -152,12 +246,54 @@
 		    "layers": [
 			{
 			    "config": {
-				"showLegend": true,
+				"showLegend": false,
 				"style": {
 				    "color": {
 					"fixed": "dark-green"
 				    },
 				    "opacity": 0.4,
+				    "rotation": {
+					"field": "yaw",
+					"fixed": 0,
+					"max": 360,
+					"min": -360,
+					"mode": "mod"
+				    },
+				    "size": {
+					"fixed": 10,
+					"max": 15,
+					"min": 2
+				    },
+				    "symbol": {
+					"fixed": "img/icons/marker/triangle.svg",
+					"mode": "fixed"
+				    },
+				    "symbolAlign": {
+					"horizontal": "center",
+					"vertical": "center"
+				    },
+				    "textConfig": {
+					"fontSize": 12,
+					"offsetX": 0,
+					"offsetY": 0,
+					"textAlign": "center",
+					"textBaseline": "middle"
+				    }
+				}
+			    },
+			    "name": "Layer 1",
+			    "tooltip": true,
+			    "type": "markers"
+			},
+			{
+			    "config": {
+				"arrow": 0,
+				"style": {
+				    "color": {
+					"fixed": "dark-green"
+				    },
+				    "lineWidth": 2,
+				    "opacity": 1,
 				    "rotation": {
 					"fixed": 0,
 					"max": 360,
@@ -186,12 +322,62 @@
 				    }
 				}
 			    },
+			    "filterData": {
+				"id": "byRefId",
+				"options": "B"
+			    },
+			    "name": "Layer 2",
+			    "tooltip": true,
+			    "type": "route"
+			},
+			{
+			    "config": {
+				"arrow": 0,
+				"style": {
+				    "color": {
+					"fixed": "dark-orange"
+				    },
+				    "lineWidth": 2,
+				    "opacity": 1,
+				    "rotation": {
+					"fixed": 0,
+					"max": 360,
+					"min": -360,
+					"mode": "mod"
+				    },
+				    "size": {
+					"fixed": 10,
+					"max": 15,
+					"min": 2
+				    },
+				    "symbol": {
+					"fixed": "img/icons/marker/circle.svg",
+					"mode": "fixed"
+				    },
+				    "symbolAlign": {
+					"horizontal": "center",
+					"vertical": "center"
+				    },
+				    "textConfig": {
+					"fontSize": 12,
+					"offsetX": 0,
+					"offsetY": 0,
+					"textAlign": "center",
+					"textBaseline": "middle"
+				    }
+				}
+			    },
+			    "filterData": {
+				"id": "byRefId",
+				"options": "C"
+			    },
 			    "location": {
 				"mode": "auto"
 			    },
-			    "name": "Layer 1",
+			    "name": "Layer 3",
+			    "opacity": 0.4,
 			    "tooltip": true,
-			    "type": "markers"
+			    "type": "route"
 			}
 		    ],
 		    "tooltip": {
@@ -212,8 +398,26 @@
 			    "type": "influxdb",
 			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
 			},
-			"query": "from(bucket: \"grafana-test\")\n  |> range(start: -1h)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\"])",
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -5m)  // Adjust the time range as needed\n  |> last()\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\"])",
 			"refId": "A"
+		    },
+		    {
+			"datasource": {
+			    "type": "influxdb",
+			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+			},
+			"hide": false,
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -1m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\"])",
+			"refId": "B"
+		    },
+		    {
+			"datasource": {
+			    "type": "influxdb",
+			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+			},
+			"hide": false,
+			"query": "from(bucket: \"cabot\")\n|> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"plan\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\"])",
+			"refId": "C"
 		    }
 		],
 		"title": "Robot Location",
@@ -227,39 +431,83 @@
 		"fieldConfig": {
 		    "defaults": {
 			"color": {
-			    "mode": "palette-classic"
+			    "mode": "continuous-greens"
+			},
+			"mappings": [],
+			"thresholds": {
+			    "mode": "absolute",
+			    "steps": [
+				{
+				    "color": "green",
+				    "value": null
+				},
+				{
+				    "color": "red",
+				    "value": 80
+				}
+			    ]
+			},
+			"unit": "percent",
+			"unitScale": true
+		    },
+		    "overrides": []
+		},
+		"gridPos": {
+		    "h": 8,
+		    "w": 4,
+		    "x": 0,
+		    "y": 8
+		},
+		"id": 5,
+		"options": {
+		    "minVizHeight": 75,
+		    "minVizWidth": 75,
+		    "orientation": "vertical",
+		    "reduceOptions": {
+			"calcs": [
+			    "lastNotNull"
+			],
+			"fields": "/^constantValue$/",
+			"values": false
+		    },
+		    "showThresholdLabels": false,
+		    "showThresholdMarkers": true,
+		    "sizing": "auto"
+		},
+		"pluginVersion": "10.3.1",
+		"targets": [
+		    {
+			"datasource": {
+			    "type": "influxdb",
+			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+			},
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -1m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\"])\n  |> map(fn: (r) => ({ r with constantValue: 88 }))\n  |> keep(columns: [\"_time\", \"constantValue\"])",
+			"refId": "A"
+		    }
+		],
+		"title": "Battery",
+		"type": "gauge"
+	    },
+	    {
+		"datasource": {
+		    "type": "influxdb",
+		    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+		},
+		"fieldConfig": {
+		    "defaults": {
+			"color": {
+			    "mode": "thresholds"
 			},
 			"custom": {
-			    "axisBorderShow": false,
-			    "axisCenteredZero": false,
-			    "axisColorMode": "text",
-			    "axisLabel": "",
-			    "axisPlacement": "auto",
-			    "barAlignment": 0,
-			    "drawStyle": "line",
-			    "fillOpacity": 0,
-			    "gradientMode": "none",
+			    "fillOpacity": 70,
 			    "hideFrom": {
 				"legend": false,
 				"tooltip": false,
 				"viz": false
 			    },
 			    "insertNulls": false,
-			    "lineInterpolation": "linear",
-			    "lineWidth": 1,
-			    "pointSize": 5,
-			    "scaleDistribution": {
-				"type": "linear"
-			    },
-			    "showPoints": "auto",
-			    "spanNulls": false,
-			    "stacking": {
-				"group": "A",
-				"mode": "none"
-			    },
-			    "thresholdsStyle": {
-				"mode": "off"
-			    }
+			    "lineWidth": 0,
+			    "spanNulls": false
 			},
 			"mappings": [],
 			"thresholds": {
@@ -281,18 +529,21 @@
 		},
 		"gridPos": {
 		    "h": 8,
-		    "w": 12,
-		    "x": 0,
+		    "w": 8,
+		    "x": 4,
 		    "y": 8
 		},
-		"id": 1,
+		"id": 3,
 		"options": {
+		    "alignValue": "left",
 		    "legend": {
-			"calcs": [],
 			"displayMode": "list",
 			"placement": "bottom",
 			"showLegend": true
 		    },
+		    "mergeValues": false,
+		    "rowHeight": 0.9,
+		    "showValue": "auto",
 		    "tooltip": {
 			"mode": "single",
 			"sort": "none"
@@ -304,19 +555,75 @@
 			    "type": "influxdb",
 			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
 			},
-			"query": "from(bucket: \"grafana-test\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temperature\")\n  |> filter(fn: (r) => r._field == \"value\")\n",
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -5m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"diagnostic\")\n  |> filter(fn: (r) => r._field == \"level\")\n",
 			"refId": "A"
 		    }
 		],
-		"title": "Temperature",
-		"type": "timeseries"
+		"title": "Navigation 2 Status",
+		"type": "state-timeline"
+	    },
+	    {
+		"datasource": {
+		    "type": "influxdb",
+		    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+		},
+		"gridPos": {
+		    "h": 14,
+		    "w": 12,
+		    "x": 6,
+		    "y": 16
+		},
+		"id": 6,
+		"options": {
+		    "code": {
+			"language": "plaintext",
+			"showLineNumbers": false,
+			"showMiniMap": false
+		    },
+		    "content": "<img src=\"data:image/jpeg;base64,${base64Image}\" alt=\"Base64 Image\">\n",
+		    "mode": "html"
+		},
+		"pluginVersion": "10.3.1",
+		"targets": [
+		    {
+			"datasource": {
+			    "type": "influxdb",
+			    "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+			},
+			"query": "from(bucket: \"cabot\")\n  |> range(start: -5s)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"image\")\n  |> filter(fn: (r) => r[\"_field\"] == \"data\")\n  |> filter(fn: (r) => r[\"format\"] == \"jpeg\")",
+			"refId": "A"
+		    }
+		],
+		"title": "Panel Title",
+		"type": "text"
 	    }
 	],
 	"refresh": "5s",
 	"schemaVersion": 39,
 	"tags": [],
 	"templating": {
-	    "list": []
+	    "list": [
+		{
+		    "current": {
+			"isNone": true,
+			"selected": false,
+			"text": "None",
+			"value": ""
+		    },
+		    "definition": "from(bucket: \"cabot\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"image\")\n  |> filter(fn: (r) => r[\"_field\"] == \"data\")\n  |> filter(fn: (r) => r[\"format\"] == \"jpeg\")\n  |> last()",
+		    "hide": 0,
+		    "includeAll": false,
+		    "multi": false,
+		    "name": "base64Image",
+		    "options": [],
+		    "query": "from(bucket: \"cabot\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"image\")\n  |> filter(fn: (r) => r[\"_field\"] == \"data\")\n  |> filter(fn: (r) => r[\"format\"] == \"jpeg\")\n  |> last()",
+		    "refresh": 2,
+		    "regex": "",
+		    "skipUrlSync": false,
+		    "sort": 0,
+		    "type": "query"
+		}
+	    ]
 	},
 	"time": {
 	    "from": "now-5m",
@@ -326,7 +633,7 @@
 	"timezone": "",
 	"title": "CaBot Test",
 	"uid": "ae0eba99-4636-4fa2-a82f-e521e673694c",
-	"version": 2,
+	"version": 5,
 	"weekStart": ""
     }
 }

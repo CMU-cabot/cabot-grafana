@@ -3,11 +3,14 @@ FROM ros:humble
 RUN apt update && apt install --no-install-recommends -y \
 	curl \
 	python3-pip \
-	ros-humble-rmw-cyclonedds-cpp
+	ros-humble-rmw-cyclonedds-cpp \
+	ros-humble-tf-transformations
 #	&& \
 #	rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install influxdb-client
+RUN pip3 install \
+	influxdb-client \
+	transforms3d
 
 COPY launch.sh /launch.sh
 

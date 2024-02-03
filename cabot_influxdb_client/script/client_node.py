@@ -28,6 +28,10 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+import base64
 
 from cabot_ui import geoutil, cabot_rclpy_util
 
@@ -79,6 +83,10 @@ class ClientNode(Node):
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback, 10)
 
         self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
+
+        self.image_sub = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)        
+        self.image_throttle = Throttle(10)
+        self.bridge = CvBridge()
 
         self.current_floor = 0
 
@@ -139,6 +147,17 @@ class ClientNode(Node):
                 .field("lng", globalp.lng) \
                 .time(datetime.utcnow())
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+
+    def image_callback(self, msg):
+        if not self.image_throttle.check():
+            return
+        self.image_throttle.reset()
+
+        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        jpg_as_text = base64.b64encode(buffer).decode()
+        point = Point("image").tag("format", "jpeg").field("data", jpg_as_text)
+        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
 
 def main(args=None):

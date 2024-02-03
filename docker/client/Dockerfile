@@ -4,7 +4,8 @@ RUN apt update && apt install --no-install-recommends -y \
 	curl \
 	python3-pip \
 	ros-humble-rmw-cyclonedds-cpp \
-	ros-humble-tf-transformations
+	ros-humble-tf-transformations \
+	ros-humble-cv-bridge
 #	&& \
 #	rm -rf /var/lib/apt/lists/*
 

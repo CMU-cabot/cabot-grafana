@@ -19,12 +19,20 @@
 ### Environment variables (.env)
 
 ```
-CABOT_ANCHOR_FILE           # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
-CABOT_INFLUXDB_ROBOT_NAME   # robot name like cabot1
-CABOT_INFLUXDB_HOST         # host like http://localhost:8086
-CABOT_INFLUXDB_TOKEN        # token
-CABOT_INFLUXDB_ORG          # org
-CABOT_INFLUXDB_BUCKET       # bucket
+CABOT_ANCHOR_FILE                  # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
+CABOT_INFLUXDB_ROBOT_NAME          # robot name like cabot1
+CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera
+CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera
+CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera
+CABOT_INFLUXDB_POSE_INTERVAL       # <float> interval for pose
+CABOT_INFLUXDB_CMD_VEL_INTERVAL    # <float> interval for cmd vel
+CABOT_INFLUXDB_ODOM_INTERVAL       # <float> interval for odom
+CABOT_INFLUXDB_DIAG_AGG_INTERVAL   # <float> interval for diagnostics agg
+CABOT_INFLUXDB_IMAGE_INTERVAL      # <float> interval for image
+CABOT_INFLUXDB_HOST                # host like http://localhost:8086
+CABOT_INFLUXDB_TOKEN               # token
+CABOT_INFLUXDB_ORG                 # org
+CABOT_INFLUXDB_BUCKET              # bucket
 ```
 
 ## launch local grafana/influxDB for development

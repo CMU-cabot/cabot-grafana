@@ -96,78 +96,94 @@ class ClientNode(Node):
                 self.anchor = temp
             else:
                 self.get_logger.warn(F"could not load anchor_file \"{anchor_file}\"")
+        pose_interval = self.declare_parameter("pose_interval", 1.0).value
+        cmd_vel_interval = self.declare_parameter("cmd_vel_interval", 0.2).value
+        odom_interval = self.declare_parameter("odom_interval", 0.2).value
+        diag_agg_interval = self.declare_parameter("diag_agg_interval", 1.0).value
+        image_interval = self.declare_parameter("image_interval", 5.0).value
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
 
-        self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback, 10)
-        self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback, 10)
-        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
-        self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback, 10)
+        self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback(pose_interval), 10)
+        self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback(cmd_vel_interval), 10)
+        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
+        self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         # TODO: need to use path_to_goal
         self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
-        self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback("left"), 10)
-        self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback("center"), 10)
-        self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback("right"), 10)
+        self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
+        self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
+        self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)
         self.bridge = CvBridge()
 
-    @throttle(1.0)
-    def pose_log_callback(self, msg):
-        orientation = msg.pose.orientation
-        (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
-        count = 0
-        for robot_name in self.robot_names:
-            point = Point("pose_data") \
-                .field("lat", msg.lat + 0.0005 * count) \
-                .field("lng", msg.lng + 0.0005 * count) \
-                .field("floor", msg.floor) \
-                .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
-                .tag("robot_name", robot_name) \
-                .time(get_nanosec(), WritePrecision.NS)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-            count += 1
-
-    @throttle(0.2)
-    def cmd_vel_callback(self, msg):
-        point = Point("cmd_vel") \
-            .field("linear", msg.linear.x) \
-            .field("angular", msg.angular.z) \
-            .tag("robot_name", self.robot_name) \
-            .time(get_nanosec(), WritePrecision.NS)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-
-    @throttle(0.2)
-    def odom_callback(self, msg):
-        for robot_name in self.robot_names:
-            point = Point("odometry") \
-                .field("linear", msg.twist.twist.linear.x) \
-                .field("angular", msg.twist.twist.angular.z) \
-                .tag("robot_name", robot_name) \
-                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-
-    def diagnostics_callback(self, msg):
-        diagnostics = {}
-        for state in msg.status:
-            items = state.name.split("/")
-            if len(items) != 3:
-                continue
-            name = items[2]
-            if name not in diagnostics:
-                diagnostics[name] = 0
-
-            level = int.from_bytes(state.level, byteorder='big')
-            if diagnostics[name] < level:
-                diagnostics[name] = level
-
-        for robot_name in self.robot_names:
-            for name, level in diagnostics.items():
-                point = Point("diagnostic")\
-                    .field("level", level)\
-                    .tag("name", name)\
+    
+    def pose_log_callback(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            orientation = msg.pose.orientation
+            (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+            count = 0
+            for robot_name in self.robot_names:
+                point = Point("pose_data") \
+                    .field("lat", msg.lat + 0.0005 * count) \
+                    .field("lng", msg.lng + 0.0005 * count) \
+                    .field("floor", msg.floor) \
+                    .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                count += 1
+        return inner_func
+
+
+    def cmd_vel_callback(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            point = Point("cmd_vel") \
+                .field("linear", msg.linear.x) \
+                .field("angular", msg.angular.z) \
+                .tag("robot_name", self.robot_name) \
+                .time(get_nanosec(), WritePrecision.NS)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        return inner_func
+
+    def odom_callback(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("odometry") \
+                    .field("linear", msg.twist.twist.linear.x) \
+                    .field("angular", msg.twist.twist.angular.z) \
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        return inner_func
+
+    def diagnostics_callback(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            diagnostics = {}
+            for state in msg.status:
+                items = state.name.split("/")
+                if len(items) != 3:
+                    continue
+                name = items[2]
+                if name not in diagnostics:
+                    diagnostics[name] = 0
+
+                level = int.from_bytes(state.level, byteorder='big')
+                if diagnostics[name] < level:
+                    diagnostics[name] = level
+
+            for robot_name in self.robot_names:
+                for name, level in diagnostics.items():
+                    point = Point("diagnostic")\
+                        .field("level", level)\
+                        .tag("name", name)\
+                        .tag("robot_name", robot_name) \
+                        .time(get_nanosec(), WritePrecision.NS)
+                    self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        return inner_func
 
     def path_callback(self, msg):
         group = get_nanosec()
@@ -186,8 +202,8 @@ class ClientNode(Node):
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
             count+=1
 
-    def image_callback(self, direction):
-        @throttle(5)
+    def image_callback(self, interval, direction):
+        @throttle(interval)
         def inner_func(msg):
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])

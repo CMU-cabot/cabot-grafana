@@ -13,6 +13,21 @@ launch:
       name: image_right_topic
       default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "")
   - arg:
+      name: pose_interval
+      default: $(env CABOT_INFLUXDB_POSE_INTERVAL 1.0)
+  - arg:
+      name: cmd_vel_interval
+      default: $(env CABOT_INFLUXDB_CMD_VEL_INTERVAL 0.2)
+  - arg:
+      name: odom_interval
+      default: $(env CABOT_INFLUXDB_ODOM_INTERVAL 0.2)
+  - arg:
+      name: diag_agg_interval
+      default: $(env CABOT_INFLUXDB_DIAG_AGG_INTERVAL 1.0)
+  - arg:
+      name: image_interval
+      default: $(env CABOT_INFLUXDB_IMAGE_INTERVAL 5.0)
+  - arg:
       name: host
       default: $(env CABOT_INFLUXDB_HOST http://localhost:8086)
   - arg:
@@ -45,6 +60,21 @@ launch:
         -
           name: image_right_topic
           value: $(var image_right_topic)
+        -
+          name: pose_interval
+          value: $(var pose_interval)
+        -
+          name: cmd_vel_interval
+          value: $(var cmd_vel_interval)
+        -
+          name: odom_interval
+          value: $(var odom_interval)
+        -
+          name: diag_agg_interval
+          value: $(var diag_agg_interval)
+        -
+          name: image_interval
+          value: $(var image_interval)
         -
           name: host
           value: $(var host)

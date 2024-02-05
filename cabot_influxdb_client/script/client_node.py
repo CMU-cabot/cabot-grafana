@@ -84,6 +84,10 @@ class ClientNode(Node):
         self.org = self.declare_parameter("org", "").value
         self.bucket = self.declare_parameter("bucket", "").value
         anchor_file = self.declare_parameter("anchor_file", "").value
+        image_left_topic = self.declare_parameter("image_left_topic", "").value
+        image_center_topic = self.declare_parameter("image_center_topic", "").value
+        image_right_topic = self.declare_parameter("image_right_topic", "").value
+        self.get_logger().info(F"image_topics is {image_left_topic}, {image_center_topic}, {image_right_topic}")
         self.anchor = None
         self.get_logger().info(F"Anchor file is {anchor_file}")
         if anchor_file is not None:
@@ -102,8 +106,9 @@ class ClientNode(Node):
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback, 10)
         # TODO: need to use path_to_goal
         self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
-        # TODO: use different topic for physical machine
-        self.image_sub = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)        
+        self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback("left"), 10)
+        self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback("center"), 10)
+        self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback("right"), 10)
         self.bridge = CvBridge()
 
     @throttle(1.0)
@@ -181,19 +186,21 @@ class ClientNode(Node):
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
             count+=1
 
-    @throttle(5)
-    def image_callback(self, msg):
-        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-        jpg_as_text = base64.b64encode(buffer).decode()
-        for robot_name in self.robot_names:
-            point = Point("image") \
-                .field("data", jpg_as_text) \
-                .tag("format", "jpeg") \
-                .tag("robot_name", robot_name) \
-                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-
+    def image_callback(self, direction):
+        @throttle(5)
+        def inner_func(msg):
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            jpg_as_text = base64.b64encode(buffer).decode()
+            for robot_name in self.robot_names:
+                point = Point("image") \
+                    .field("data", jpg_as_text) \
+                    .tag("format", "jpeg") \
+                    .tag("direction", direction) \
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        return inner_func
 
 def main(args=None):
     rclpy.init(args=args)

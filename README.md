@@ -20,6 +20,7 @@
 
 ```
 CABOT_ANCHOR_FILE           # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
+CABOT_INFLUXDB_ROBOT_NAME   # robot name like cabot1
 CABOT_INFLUXDB_HOST         # host like http://localhost:8086
 CABOT_INFLUXDB_TOKEN        # token
 CABOT_INFLUXDB_ORG          # org

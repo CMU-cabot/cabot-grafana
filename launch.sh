@@ -19,6 +19,7 @@ function help {
     echo "-h                    "
     echo "-s                    launch local server"
     echo "-i                    initial setup the servers"
+    echo "-d                    launch server in development mode"
 }
 
 pwd=$(pwd)
@@ -28,8 +29,9 @@ scriptdir=$(pwd)
 
 initial_setup=0
 dcfile="docker-compose.yaml"
+development=0
 
-while getopts "his" arg; do
+while getopts "hisd" arg; do
     case $arg in
 	h)
 	    help
@@ -41,13 +43,20 @@ while getopts "his" arg; do
 	s)
 	    dcfile="docker-compose-local.yaml"
 	    ;;
+	d)
+	    development=1
+	    ;;
     esac
 done
 shift $((OPTIND-1))
 
-
-dccom="docker compose -f $dcfile"
-eval "$dccom up -d"
+if [[ $development -eq 1 ]]; then
+    dccom="docker compose -f docker-compose-dev.yaml"
+    eval "$dccom up"
+else
+    dccom="docker compose -f $dcfile"
+    eval "$dccom up -d"
+fi
 
 if [[ $initial_setup -eq 1 ]]; then
     snore 5

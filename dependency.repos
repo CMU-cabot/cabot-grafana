@@ -3,3 +3,9 @@ repositories:
     type: git
     url: https://github.com/CMU-cabot/cabot-common
     version: main
+
+  grafana:
+    type: git
+    url: https://github.com/CMU-cabot/grafana.git
+    version: main
+

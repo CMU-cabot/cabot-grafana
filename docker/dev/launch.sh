@@ -45,6 +45,7 @@ if [[ $1 == "build" ]]; then
 elif [[ $1 == "launch" ]]; then
     shift 1
     cd /home/developer/src/grafana
+    source $HOME/.nvm/nvm.sh
     yarn start &
     make run
 fi

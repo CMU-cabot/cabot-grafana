@@ -78,7 +78,7 @@ class ClientNode(Node):
         self.robot_name = self.declare_parameter("robot_name", "").value
 
         # debug
-        self.robot_names = ["cabot1", "cabot2", "cabot3"]
+        self.robot_names = [f"cabot{i}" for i in range(1, 11)]
         self.host = self.declare_parameter("host", "").value
         self.token = self.declare_parameter("token", "").value
         self.org = self.declare_parameter("org", "").value
@@ -113,11 +113,11 @@ class ClientNode(Node):
         count = 0
         for robot_name in self.robot_names:
             point = Point("pose_data") \
-                .field("lat", msg.lat + 0.0001 * count) \
-                .field("lng", msg.lng + 0.0001 * count) \
+                .field("lat", msg.lat + 0.0005 * count) \
+                .field("lng", msg.lng + 0.0005 * count) \
                 .field("floor", msg.floor) \
                 .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
-                .field("robot_name", robot_name) \
+                .tag("robot_name", robot_name) \
                 .time(get_nanosec(), WritePrecision.NS)
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
             count += 1
@@ -169,10 +169,10 @@ class ClientNode(Node):
                 localp = geoutil.Point(x=position.x, y=position.y)
                 globalp = geoutil.local2global(localp, self.anchor)
                 point = Point("plan") \
-                    .field("lat", globalp.lat + 0.0001 * count) \
-                    .field("lng", globalp.lng + count * 0.0001) \
+                    .field("lat", globalp.lat + 0.0005 * count) \
+                    .field("lng", globalp.lng + count * 0.0005) \
                     .field("group", group) \
-                    .field("robot_name", robot_name) \
+                    .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
             count+=1

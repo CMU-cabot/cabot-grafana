@@ -19,10 +19,11 @@
 ### Environment variables (.env)
 
 ```
-CABOT_INFLUXDB_HOST
-CABOT_INFLUXDB_TOKEN
-CABOT_INFLUXDB_ORG
-CABOT_INFLUXDB_BUCKET
+CABOT_ANCHOR_FILE           # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
+CABOT_INFLUXDB_HOST         # host like http://localhost:8086
+CABOT_INFLUXDB_TOKEN        # token
+CABOT_INFLUXDB_ORG          # org
+CABOT_INFLUXDB_BUCKET       # bucket
 ```
 
 ## launch local grafana/influxDB for development

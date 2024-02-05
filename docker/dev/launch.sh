@@ -42,6 +42,7 @@ if [[ $1 == "build" ]]; then
 	yarn install --immutable
     cd /home/developer/src/grafana
     make build
+    ./bin/grafana cli plugins install volkovlabs-image-panel
 elif [[ $1 == "launch" ]]; then
     shift 1
     cd /home/developer/src/grafana

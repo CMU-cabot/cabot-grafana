@@ -110,7 +110,7 @@ class ClientNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         # TODO: need to use path_to_goal
-        self.plan_sub = self.create_subscription(Path, '/path', self.path_callback, 10)
+        self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
         self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
         self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)

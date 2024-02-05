@@ -142,23 +142,27 @@ class ClientNode(Node):
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def diagnostics_callback(self, msg):
-        target_name = "Soft: Navigation2"
-        max_level = 0
+        diagnostics = {}
         for state in msg.status:
             items = state.name.split("/")
-            if len(items) < 3:
+            if len(items) != 3:
                 continue
-            if items[2] == target_name:
-                level = int.from_bytes(state.level, byteorder='big')
-                if max_level < level:
-                    max_level = level
+            name = items[2]
+            if name not in diagnostics:
+                diagnostics[name] = 0
+
+            level = int.from_bytes(state.level, byteorder='big')
+            if diagnostics[name] < level:
+                diagnostics[name] = level
+
         for robot_name in self.robot_names:
-            point = Point("diagnostic")\
-                .field("level", max_level)\
-                .field("name", target_name)\
-                .tag("robot_name", robot_name) \
-                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            for name, level in diagnostics.items():
+                point = Point("diagnostic")\
+                    .field("level", level)\
+                    .tag("name", name)\
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def path_callback(self, msg):
         group = get_nanosec()

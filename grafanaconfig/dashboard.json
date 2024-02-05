@@ -86,7 +86,7 @@
         },
         "gridPos": {
           "h": 4,
-          "w": 2,
+          "w": 1,
           "x": 2,
           "y": 0
         },
@@ -160,8 +160,8 @@
         },
         "gridPos": {
           "h": 4,
-          "w": 2,
-          "x": 4,
+          "w": 1,
+          "x": 3,
           "y": 0
         },
         "id": 7,
@@ -261,7 +261,7 @@
         "gridPos": {
           "h": 4,
           "w": 2,
-          "x": 6,
+          "x": 4,
           "y": 0
         },
         "id": 1,
@@ -323,8 +323,8 @@
         },
         "gridPos": {
           "h": 4,
-          "w": 2,
-          "x": 8,
+          "w": 1,
+          "x": 6,
           "y": 0
         },
         "id": 5,
@@ -380,8 +380,35 @@
               "lineWidth": 0,
               "spanNulls": false
             },
-            "displayName": "Level",
-            "mappings": [],
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "color": "dark-green",
+                    "index": 0,
+                    "text": "OK"
+                  },
+                  "1": {
+                    "color": "dark-orange",
+                    "index": 1,
+                    "text": "Warning"
+                  },
+                  "2": {
+                    "color": "dark-red",
+                    "index": 2,
+                    "text": "Error"
+                  },
+                  "3": {
+                    "color": "#808080",
+                    "index": 3,
+                    "text": "Stale"
+                  }
+                },
+                "type": "value"
+              }
+            ],
+            "max": 3,
+            "min": 0,
             "thresholds": {
               "mode": "absolute",
               "steps": [
@@ -402,7 +429,7 @@
         "gridPos": {
           "h": 4,
           "w": 3,
-          "x": 10,
+          "x": 7,
           "y": 0
         },
         "id": 3,
@@ -429,12 +456,305 @@
               "type": "influxdb",
               "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
             },
-            "query": "from(bucket: \"cabot\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"diagnostic\")\n  |> filter(fn: (r) => r._field == \"level\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n",
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"diagnostic\")\n  |> filter(fn: (r) => r._field == \"level\" or r._field == \"name\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"name\", \"level\"])\n\n\n",
             "refId": "A"
           }
         ],
-        "title": "Navigation 2 Status",
+        "title": "Diagnostics",
         "type": "state-timeline"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 2,
+          "x": 10,
+          "y": 0
+        },
+        "id": 191,
+        "options": {
+          "autoPlay": true,
+          "buttons": [],
+          "controls": true,
+          "height": 0,
+          "heightMode": "auto",
+          "scale": "auto",
+          "toolbar": true,
+          "width": 0,
+          "widthMode": "auto",
+          "zoomType": "default"
+        },
+        "repeat": "robot_name",
+        "repeatDirection": "v",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+            },
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"image\")\n  |> filter(fn: (r) => r._field == \"data\")\n  |> filter(fn: (r) => r[\"format\"] == \"jpeg\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n",
+            "refId": "A"
+          }
+        ],
+        "title": "Panel Title",
+        "type": "volkovlabs-image-panel"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unitScale": true
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 2,
+          "x": 12,
+          "y": 0
+        },
+        "id": 127,
+        "options": {
+          "basemap": {
+            "config": {},
+            "name": "Layer 0",
+            "type": "default"
+          },
+          "controls": {
+            "mouseWheelZoom": true,
+            "showAttribution": true,
+            "showDebug": false,
+            "showMeasure": false,
+            "showScale": false,
+            "showZoom": true
+          },
+          "layers": [
+            {
+              "config": {
+                "showLegend": false,
+                "style": {
+                  "color": {
+                    "fixed": "dark-green"
+                  },
+                  "opacity": 0.4,
+                  "rotation": {
+                    "field": "yaw",
+                    "fixed": 0,
+                    "max": 360,
+                    "min": -360,
+                    "mode": "mod"
+                  },
+                  "size": {
+                    "fixed": 10,
+                    "max": 15,
+                    "min": 2
+                  },
+                  "symbol": {
+                    "fixed": "img/icons/marker/triangle.svg",
+                    "mode": "fixed"
+                  },
+                  "symbolAlign": {
+                    "horizontal": "center",
+                    "vertical": "center"
+                  },
+                  "text": {
+                    "field": "seriesName",
+                    "fixed": "",
+                    "mode": "field"
+                  },
+                  "textConfig": {
+                    "fontSize": 18,
+                    "offsetX": 18,
+                    "offsetY": 18,
+                    "textAlign": "center",
+                    "textBaseline": "middle"
+                  }
+                }
+              },
+              "filterData": {
+                "id": "byRefId",
+                "options": "A"
+              },
+              "location": {
+                "latitude": "lat",
+                "longitude": "lng",
+                "mode": "coords"
+              },
+              "name": "Layer 1",
+              "tooltip": true,
+              "type": "markers"
+            },
+            {
+              "config": {
+                "arrow": 0,
+                "style": {
+                  "color": {
+                    "fixed": "dark-green"
+                  },
+                  "lineWidth": 2,
+                  "opacity": 1,
+                  "rotation": {
+                    "fixed": 0,
+                    "max": 360,
+                    "min": -360,
+                    "mode": "mod"
+                  },
+                  "size": {
+                    "fixed": 5,
+                    "max": 15,
+                    "min": 2
+                  },
+                  "symbol": {
+                    "fixed": "img/icons/marker/circle.svg",
+                    "mode": "fixed"
+                  },
+                  "symbolAlign": {
+                    "horizontal": "center",
+                    "vertical": "center"
+                  },
+                  "textConfig": {
+                    "fontSize": 12,
+                    "offsetX": 0,
+                    "offsetY": 0,
+                    "textAlign": "center",
+                    "textBaseline": "middle"
+                  }
+                }
+              },
+              "filterData": {
+                "id": "byRefId",
+                "options": "B"
+              },
+              "name": "Layer 2",
+              "tooltip": true,
+              "type": "route"
+            },
+            {
+              "config": {
+                "arrow": 0,
+                "style": {
+                  "color": {
+                    "fixed": "dark-orange"
+                  },
+                  "lineWidth": 2,
+                  "opacity": 1,
+                  "rotation": {
+                    "fixed": 0,
+                    "max": 360,
+                    "min": -360,
+                    "mode": "mod"
+                  },
+                  "size": {
+                    "fixed": 10,
+                    "max": 15,
+                    "min": 2
+                  },
+                  "symbol": {
+                    "fixed": "img/icons/marker/circle.svg",
+                    "mode": "fixed"
+                  },
+                  "symbolAlign": {
+                    "horizontal": "center",
+                    "vertical": "center"
+                  },
+                  "textConfig": {
+                    "fontSize": 12,
+                    "offsetX": 0,
+                    "offsetY": 0,
+                    "textAlign": "center",
+                    "textBaseline": "middle"
+                  }
+                }
+              },
+              "filterData": {
+                "id": "byRefId",
+                "options": "C"
+              },
+              "location": {
+                "latitude": "lat",
+                "longitude": "lng",
+                "mode": "coords"
+              },
+              "name": "Layer 3",
+              "opacity": 0.4,
+              "tooltip": true,
+              "type": "route"
+            }
+          ],
+          "tooltip": {
+            "mode": "details"
+          },
+          "view": {
+            "allLayers": true,
+            "id": "fit",
+            "lat": 40.443503,
+            "lon": -79.94538,
+            "zoom": 18
+          }
+        },
+        "pluginVersion": "10.4.0-pre",
+        "repeat": "robot_name",
+        "repeatDirection": "v",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+            },
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -5m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\", \"robot_name\"])\n  |> last(column: \"_time\")\n  |> map(fn: (r) => ({\n      r with\n      _value: r._value,\n      seriesName: r.robot_name\n    }))",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+            },
+            "hide": false,
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -1m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\", \"robot_name\"])",
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+            },
+            "hide": false,
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"plan\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"robot_name\"])\n",
+            "refId": "C"
+          }
+        ],
+        "title": "Robot Location",
+        "type": "geomap"
       },
       {
         "datasource": {
@@ -473,8 +793,8 @@
         },
         "gridPos": {
           "h": 40,
-          "w": 11,
-          "x": 13,
+          "w": 10,
+          "x": 14,
           "y": 0
         },
         "id": 2,
@@ -648,10 +968,10 @@
           },
           "view": {
             "allLayers": true,
-            "id": "coords",
+            "id": "fit",
             "lat": 40.443503,
             "lon": -79.94538,
-            "zoom": 18.14
+            "zoom": 18
           }
         },
         "pluginVersion": "10.4.0-pre",
@@ -726,6 +1046,41 @@
               "selected": false,
               "text": "cabot3",
               "value": "cabot3"
+            },
+            {
+              "selected": false,
+              "text": "cabot4",
+              "value": "cabot4"
+            },
+            {
+              "selected": false,
+              "text": "cabot5",
+              "value": "cabot5"
+            },
+            {
+              "selected": false,
+              "text": "cabot6",
+              "value": "cabot6"
+            },
+            {
+              "selected": false,
+              "text": "cabot7",
+              "value": "cabot7"
+            },
+            {
+              "selected": false,
+              "text": "cabot8",
+              "value": "cabot8"
+            },
+            {
+              "selected": false,
+              "text": "cabot9",
+              "value": "cabot9"
+            },
+            {
+              "selected": false,
+              "text": "cabot10",
+              "value": "cabot10"
             }
           ],
           "query": "cabot1, cabot2, cabot3, cabot4, cabot5, cabot6, cabot7, cabot8, cabot9, cabot10",
@@ -736,14 +1091,14 @@
       ]
     },
     "time": {
-      "from": "now-6h",
+      "from": "now-5m",
       "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "CaBot Test",
     "uid": "ae0eba99-4636-4fa2-a82f-e521e673694c",
-    "version": 10,
+    "version": 22,
     "weekStart": ""
   }
 }

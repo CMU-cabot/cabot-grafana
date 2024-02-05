@@ -1,6 +1,9 @@
 
 launch:
   - arg:
+      name: robot_name
+      default: $(env CABOT_INFLUXDB_ROBOT_NAME cabot)
+  - arg:
       name: host
       default: $(env CABOT_INFLUXDB_HOST http://localhost:8086)
   - arg:
@@ -21,6 +24,9 @@ launch:
       exec: client_node.py
       name: client_node
       param:
+        -
+          name: robot_name
+          value: $(var robot_name)
         -
           name: host
           value: $(var host)

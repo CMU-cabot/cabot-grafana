@@ -75,6 +75,10 @@ class ClientNode(Node):
         super().__init__("client_node")
         CaBotRclpyUtil.initialize(self)
 
+        self.robot_name = self.declare_parameter("robot_name", "").value
+
+        # debug
+        self.robot_names = ["cabot1", "cabot2", "cabot3"]
         self.host = self.declare_parameter("host", "").value
         self.token = self.declare_parameter("token", "").value
         self.org = self.declare_parameter("org", "").value
@@ -106,29 +110,36 @@ class ClientNode(Node):
     def pose_log_callback(self, msg):
         orientation = msg.pose.orientation
         (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
-        point = Point("pose_data") \
-            .field("lat", msg.lat) \
-            .field("lng", msg.lng) \
-            .field("floor", msg.floor) \
-            .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
-            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        count = 0
+        for robot_name in self.robot_names:
+            point = Point("pose_data") \
+                .field("lat", msg.lat + 0.0001 * count) \
+                .field("lng", msg.lng + 0.0001 * count) \
+                .field("floor", msg.floor) \
+                .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
+                .field("robot_name", robot_name) \
+                .time(get_nanosec(), WritePrecision.NS)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            count += 1
 
     @throttle(0.2)
     def cmd_vel_callback(self, msg):
         point = Point("cmd_vel") \
             .field("linear", msg.linear.x) \
             .field("angular", msg.angular.z) \
+            .tag("robot_name", self.robot_name) \
             .time(get_nanosec(), WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     @throttle(0.2)
     def odom_callback(self, msg):
-        point = Point("odometry") \
-            .field("linear", msg.twist.twist.linear.x) \
-            .field("angular", msg.twist.twist.angular.z) \
-            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        for robot_name in self.robot_names:
+            point = Point("odometry") \
+                .field("linear", msg.twist.twist.linear.x) \
+                .field("angular", msg.twist.twist.angular.z) \
+                .tag("robot_name", robot_name) \
+                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def diagnostics_callback(self, msg):
         target_name = "Soft: Navigation2"
@@ -141,35 +152,43 @@ class ClientNode(Node):
                 level = int.from_bytes(state.level, byteorder='big')
                 if max_level < level:
                     max_level = level
-        point = Point("diagnostic")\
-            .tag("name", target_name)\
-            .field("level", max_level)\
-            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        for robot_name in self.robot_names:
+            point = Point("diagnostic")\
+                .field("level", max_level)\
+                .field("name", target_name)\
+                .tag("robot_name", robot_name) \
+                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
     def path_callback(self, msg):
-        group = get_nanosec(msg.header.stamp)
-        for pose in msg.poses:
-            position = pose.pose.position
-            localp = geoutil.Point(x=position.x, y=position.y)
-            globalp = geoutil.local2global(localp, self.anchor)
-            point = Point("plan") \
-                .field("lat", globalp.lat) \
-                .field("lng", globalp.lng) \
-                .field("group", group) \
-                .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        group = get_nanosec()
+        count = 0
+        for robot_name in self.robot_names:
+            for pose in msg.poses:
+                position = pose.pose.position
+                localp = geoutil.Point(x=position.x, y=position.y)
+                globalp = geoutil.local2global(localp, self.anchor)
+                point = Point("plan") \
+                    .field("lat", globalp.lat + 0.0001 * count) \
+                    .field("lng", globalp.lng + count * 0.0001) \
+                    .field("group", group) \
+                    .field("robot_name", robot_name) \
+                    .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            count+=1
 
     @throttle(5)
     def image_callback(self, msg):
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         jpg_as_text = base64.b64encode(buffer).decode()
-        point = Point("image") \
-            .tag("format", "jpeg") \
-            .field("data", jpg_as_text) \
-            .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        for robot_name in self.robot_names:
+            point = Point("image") \
+                .field("data", jpg_as_text) \
+                .tag("format", "jpeg") \
+                .tag("robot_name", robot_name) \
+                .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
 
 def main(args=None):

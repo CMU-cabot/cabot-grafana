@@ -29,6 +29,37 @@
           "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
         },
         "description": "",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "filterable": false,
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unitScale": true
+          },
+          "overrides": []
+        },
         "gridPos": {
           "h": 4,
           "w": 2,
@@ -37,19 +68,32 @@
         },
         "id": 8,
         "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
           },
-          "content": "# ${robot_name}",
-          "mode": "markdown"
+          "showHeader": false
         },
         "pluginVersion": "10.4.0-pre",
         "repeat": "robot_name",
         "repeatDirection": "v",
-        "title": "Robot Name",
-        "type": "text"
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
+            },
+            "query": "// Query for measurement1\ndata1 = from(bucket: \"cabot\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"tour\")\n  |> filter(fn: (r) => r._field == \"data\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> map(fn: (r) => ({ r with data: r._value }))\n  |> map(fn: (r) => ({ r with key: 1 }))\n  //|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> last(column: \"_time\")\n  |> keep(columns: [\"data\", \"key\"])\n\ndata2 = from(bucket: \"cabot\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"destination\")\n  |> filter(fn: (r) => r._field == \"data\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> map(fn: (r) => ({ r with data: r._value }))\n  |> map(fn: (r) => ({ r with key: 2 }))\n  //|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> last(column: \"_time\")\n  |> keep(columns: [\"data\", \"key\"])\n\n\nunion(tables: [data1, data2])\n  |> sort(columns: [\"key\"])\n  |> keep(columns: [\"data\"])",
+            "refId": "A"
+          }
+        ],
+        "title": "${robot_name}",
+        "type": "table"
       },
       {
         "datasource": {
@@ -1176,7 +1220,7 @@
     "timezone": "",
     "title": "CaBot Test",
     "uid": "ae0eba99-4636-4fa2-a82f-e521e673694c",
-    "version": 23,
+    "version": 2,
     "weekStart": ""
   }
 }

@@ -23,7 +23,7 @@
 import math
 import rclpy
 from rclpy.node import Node
-from cabot_msgs.msg import PoseLog
+from cabot_msgs.msg import PoseLog, Log
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
@@ -109,11 +109,14 @@ class ClientNode(Node):
         self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback(cmd_vel_interval), 10)
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
-        # TODO: need to use path_to_goal
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
-        self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
-        self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
-        self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)
+        if image_left_topic:
+            self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
+        if image_center_topic:
+            self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
+        if image_right_topic:
+            self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)
+        self.event_sub = self.create_subscription(Log, '/cabot/activity_log', self.activity_log_callback, 10)
         self.bridge = CvBridge()
 
     
@@ -217,6 +220,22 @@ class ClientNode(Node):
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         return inner_func
+
+    def activity_log_callback(self, msg):
+        self.get_logger().info(f"{msg}")
+        for robot_name in self.robot_names:
+            if msg.category == "tour-text":
+                point = Point("tour") \
+                    .field("data", msg.text) \
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            if msg.category == "destination-text":
+                point = Point("destination") \
+                    .field("data", msg.text) \
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
 
 def main(args=None):
     rclpy.init(args=args)

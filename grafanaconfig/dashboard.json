@@ -380,7 +380,7 @@
             "calcs": [
               "lastNotNull"
             ],
-            "fields": "/^constantValue$/",
+            "fields": "",
             "values": false
           },
           "showThresholdLabels": false,
@@ -396,7 +396,7 @@
               "type": "influxdb",
               "uid": "b4a3d92c-1235-4fa0-8bb4-647bdf95e3c2"
             },
-            "query": "from(bucket: \"cabot\")\n  |> range(start: -1m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"pose_data\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lng\" or r._field == \"yaw\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lng\", \"yaw\"])\n  |> map(fn: (r) => ({ r with constantValue: 88 }))\n  |> keep(columns: [\"_time\", \"constantValue\"])",
+            "query": "from(bucket: \"cabot\")\n  |> range(start: -1m)  // Adjust the time range as needed\n  |> filter(fn: (r) => r._measurement == \"battery\")\n  |> filter(fn: (r) => r._field == \"percentage\")\n  |> filter(fn: (r) => r.robot_name == \"${robot_name}\")",
             "refId": "A"
           }
         ],

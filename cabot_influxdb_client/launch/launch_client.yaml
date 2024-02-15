@@ -4,6 +4,9 @@ launch:
       name: robot_name
       default: $(env CABOT_INFLUXDB_ROBOT_NAME cabot)
   - arg:
+      name: battery_topic
+      default: $(env CABOT_INFLUXDB_BATTERY_TOPIC "/cabot/battery")
+  - arg:
       name: image_left_topic
       default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "")
   - arg:
@@ -24,6 +27,9 @@ launch:
   - arg:
       name: diag_agg_interval
       default: $(env CABOT_INFLUXDB_DIAG_AGG_INTERVAL 1.0)
+  - arg:
+      name: battery_interval
+      default: $(env CABOT_INFLUXDB_BATTERY_INTERVAL 1.0)
   - arg:
       name: image_interval
       default: $(env CABOT_INFLUXDB_IMAGE_INTERVAL 5.0)
@@ -52,6 +58,9 @@ launch:
           name: robot_name
           value: $(var robot_name)
         -
+          name: battery_topic
+          value: $(var battery_topic)
+        -
           name: image_left_topic
           value: $(var image_left_topic)
         -
@@ -72,6 +81,9 @@ launch:
         -
           name: diag_agg_interval
           value: $(var diag_agg_interval)
+        -
+          name: battery_interval
+          value: $(var battery_interval)
         -
           name: image_interval
           value: $(var image_interval)

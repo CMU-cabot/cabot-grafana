@@ -28,7 +28,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, BatteryState
 from cv_bridge import CvBridge
 import cv2
 import base64
@@ -87,6 +87,7 @@ class ClientNode(Node):
         self.org = self.declare_parameter("org", "").value
         self.bucket = self.declare_parameter("bucket", "").value
         anchor_file = self.declare_parameter("anchor_file", "").value
+        battery_topic = self.declare_parameter("battery_topic", "").value
         image_left_topic = self.declare_parameter("image_left_topic", "").value
         image_center_topic = self.declare_parameter("image_center_topic", "").value
         image_right_topic = self.declare_parameter("image_right_topic", "").value
@@ -103,6 +104,7 @@ class ClientNode(Node):
         cmd_vel_interval = self.declare_parameter("cmd_vel_interval", 0.2).value
         odom_interval = self.declare_parameter("odom_interval", 0.2).value
         diag_agg_interval = self.declare_parameter("diag_agg_interval", 1.0).value
+        battery_interval = self.declare_parameter("battery_interval", 1.0).value
         image_interval = self.declare_parameter("image_interval", 5.0).value
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
@@ -114,6 +116,7 @@ class ClientNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
+        self.battery_sub = self.create_subscription(BatteryState, battery_topic, self.battery_callback(battery_interval), 10)
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
@@ -217,6 +220,17 @@ class ClientNode(Node):
                     .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
                 self.send_point(point)
             count+=1
+
+    def battery_callback(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("battery") \
+                    .field("percentage", msg.percentage * 100.0) \
+                    .tag("robot_name", robot_name) \
+                    .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
 
     def image_callback(self, interval, direction):
         @throttle(interval)

@@ -20,19 +20,21 @@
 
 ```
 CABOT_ANCHOR_FILE                  # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
-CABOT_INFLUXDB_ROBOT_NAME          # robot name like cabot1
-CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera
-CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera
-CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera
-CABOT_INFLUXDB_POSE_INTERVAL       # <float> interval for pose
-CABOT_INFLUXDB_CMD_VEL_INTERVAL    # <float> interval for cmd vel
-CABOT_INFLUXDB_ODOM_INTERVAL       # <float> interval for odom
-CABOT_INFLUXDB_DIAG_AGG_INTERVAL   # <float> interval for diagnostics agg
-CABOT_INFLUXDB_IMAGE_INTERVAL      # <float> interval for image
-CABOT_INFLUXDB_HOST                # host like http://localhost:8086
-CABOT_INFLUXDB_TOKEN               # token
-CABOT_INFLUXDB_ORG                 # org
-CABOT_INFLUXDB_BUCKET              # bucket
+CABOT_INFLUXDB_ROBOT_NAME          # robot name like cabot1               (default cabot)
+CABOT_INFLUXDB_BATTERY_TOPIC       # battery topic name                   (default /cabot/battery)
+CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default "")
+CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera              (default /camera/color/image_raw)
+CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera               (default "")
+CABOT_INFLUXDB_POSE_INTERVAL       # <float> interval for pose            (default 1.0)
+CABOT_INFLUXDB_CMD_VEL_INTERVAL    # <float> interval for cmd vel         (default 0.2)
+CABOT_INFLUXDB_ODOM_INTERVAL       # <float> interval for odom            (default 0.2)
+CABOT_INFLUXDB_DIAG_AGG_INTERVAL   # <float> interval for diagnostics agg (default 1.0)
+CABOT_INFLUXDB_BATTERY_INTERVAL    # <float> interval for battery         (default 1.0)
+CABOT_INFLUXDB_IMAGE_INTERVAL      # <float> interval for image           (default 5.0)
+CABOT_INFLUXDB_HOST                # host including http/https and port   (default http://localhost:8086)
+CABOT_INFLUXDB_TOKEN               # token                                (default a54a87f7-73a0-4534-9741-ad7ff4e7d111  - development default)
+CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
+CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
 ```
 
 ## debug multiple robot grafana visualization with a single client

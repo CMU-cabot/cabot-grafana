@@ -77,8 +77,11 @@ class ClientNode(Node):
 
         self.robot_name = self.declare_parameter("robot_name", "").value
 
-        # debug
-        self.robot_names = [f"cabot{i}" for i in range(1, 11)]
+        # to debug multiple robot visualization on grafana, just use this line
+        # or set 'CABOT_INFLUXDB_ROBOT_NAME' to a comma separated names like
+        # "cabot1,cabot2,cabot3"
+        # self.robot_names = [f"cabot{i}" for i in range(1, 11)]
+        self.robot_names = self.robot_name.split(",")
         self.host = self.declare_parameter("host", "").value
         self.token = self.declare_parameter("token", "").value
         self.org = self.declare_parameter("org", "").value

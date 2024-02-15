@@ -104,6 +104,7 @@ class ClientNode(Node):
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
+        self.last_error = None
 
         self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback(pose_interval), 10)
         self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback(cmd_vel_interval), 10)
@@ -119,7 +120,16 @@ class ClientNode(Node):
         self.event_sub = self.create_subscription(Log, '/cabot/activity_log', self.activity_log_callback, 10)
         self.bridge = CvBridge()
 
-    
+    def send_point(self, point):
+        # prevent too much connection errors
+        if self.last_error and time.time() - self.last_error < 1.0:
+            return
+        try :
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        except Exception as e:
+            self.get_logger().error(f"{e}")
+            self.last_error = time.time()
+
     def pose_log_callback(self, interval):
         @throttle(interval)
         def inner_func(msg):
@@ -134,7 +144,7 @@ class ClientNode(Node):
                     .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
                 count += 1
         return inner_func
 
@@ -147,7 +157,7 @@ class ClientNode(Node):
                 .field("angular", msg.angular.z) \
                 .tag("robot_name", self.robot_name) \
                 .time(get_nanosec(), WritePrecision.NS)
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            self.send_point(point)
         return inner_func
 
     def odom_callback(self, interval):
@@ -159,7 +169,7 @@ class ClientNode(Node):
                     .field("angular", msg.twist.twist.angular.z) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
         return inner_func
 
     def diagnostics_callback(self, interval):
@@ -185,7 +195,7 @@ class ClientNode(Node):
                         .tag("name", name)\
                         .tag("robot_name", robot_name) \
                         .time(get_nanosec(), WritePrecision.NS)
-                    self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                    self.send_point(point)
         return inner_func
 
     def path_callback(self, msg):
@@ -202,7 +212,7 @@ class ClientNode(Node):
                     .field("group", group) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
             count+=1
 
     def image_callback(self, interval, direction):
@@ -218,7 +228,7 @@ class ClientNode(Node):
                     .tag("direction", direction) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
         return inner_func
 
     def activity_log_callback(self, msg):
@@ -229,13 +239,13 @@ class ClientNode(Node):
                     .field("data", msg.text) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
             if msg.category == "destination-text":
                 point = Point("destination") \
                     .field("data", msg.text) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
-                self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+                self.send_point(point)
 
 def main(args=None):
     rclpy.init(args=args)

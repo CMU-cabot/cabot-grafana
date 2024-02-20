@@ -71,11 +71,11 @@ sudo chown -R 472:472 grafanadb
 
 ## Browse InfluxDB 
 
-open [http://localhost:8086](http://localhost:8086)
+open [http://localhost:8086](http://localhost:8086) - cabot/cabot-influxdb
 
 ## Browse Grafana
 
-open [http://localhost:3000](http://localhost:3000)
+open [http://localhost:3000](http://localhost:3000) - admin/admin
 
 
 ## Trouble shooting

@@ -52,7 +52,15 @@ shift $((OPTIND-1))
 
 if [[ $development -eq 1 ]]; then
     dccom="docker compose -f docker-compose-dev.yaml"
-    eval "$dccom up"
+    eval "$dccom up -d"    
+    curl http://localhost:3000/ --fail > /dev/null 2>&1
+    test=$?
+    while [[ $test -ne 0 ]]; do
+	snore 5
+	blue "waiting the grafana server is ready..."
+	curl http://localhost:3000/ --fail > /dev/null 2>&1
+	test=$?
+    done
 else
     dccom="docker compose -f $dcfile"
     eval "$dccom up -d"
@@ -64,7 +72,8 @@ if [[ $initial_setup -eq 1 ]]; then
     snore 5
     cd ./grafanaconfig
     ./setup.sh
-    ./import.sh
+    ./import.sh -s datasources.json
+    ./import.sh -b dashboard.json
 fi
 
 while [ 1 -eq 1 ];

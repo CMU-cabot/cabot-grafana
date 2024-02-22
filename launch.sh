@@ -8,7 +8,7 @@ function ctrl_c() {
     red "catch the signal"
     if [[ ! -z $dccom ]]; then
 	red "$dccom down"
-	$dccom down
+	eval "$dccom down"
     fi
     exit
 }
@@ -74,6 +74,7 @@ if [[ $initial_setup -eq 1 ]]; then
     ./setup.sh
     ./import.sh -s datasources.json
     ./import.sh -b dashboard.json
+    cd ..
 fi
 
 while [ 1 -eq 1 ];

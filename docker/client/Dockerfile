@@ -14,6 +14,26 @@ RUN pip3 install \
 	transforms3d \
 	pyproj
 
+RUN apt install -y \
+     g++ \
+	 cmake \
+	 libcurl4-openssl-dev \
+	 libboost1.74-dev \
+	 libboost-system1.74-dev
+
+RUN cd /tmp && \
+	git clone https://github.com/libcpr/cpr.git && \
+	cd cpr && mkdir build && cd build && \
+	cmake .. -DCPR_USE_SYSTEM_CURL=ON && \
+	cmake --build . --parallel && \
+	sudo cmake --install . && \
+	git clone https://github.com/offa/influxdb-cxx && \
+	mkdir -p influxdb-cxx/build && \
+	cd influxdb-cxx/build && \
+	cmake -D INFLUXCXX_TESTING:BOOL=OFF .. && \
+	make install
+
+
 COPY launch.sh /launch.sh
 
 ### make user environment

@@ -1,6 +1,9 @@
 # cabot-grafana
 
+## prerequisite
 
+- jq
+  - `sudo apt-get install jq`
 
 ## build
 

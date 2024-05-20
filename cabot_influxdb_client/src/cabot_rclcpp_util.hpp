@@ -1,0 +1,5 @@
+#ifndef CABOT_RCLCPP_UTIL_HPP_
+#define CABOT_RCLCPP_UTIL_HPP_
+
+
+#endif  // CABOT_RCLCPP_UTIL_HPP_

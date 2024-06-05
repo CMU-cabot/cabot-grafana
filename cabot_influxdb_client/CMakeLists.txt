@@ -15,8 +15,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-include_directories(include)
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclpy REQUIRED)
@@ -55,28 +53,19 @@ add_executable(client_node
   src/client_node.cpp
 )
 
-target_include_directories(client_node PRIVATE include)
-
-target_link_libraries(client_node
-  rclcpp::rclcpp
-  std_msgs::std_msgs__rosidl_typesupport_cpp
-  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
-  diagnostic_msgs::diagnostic_msgs__rosidl_typesupport_cpp
-  geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
-  nav_msgs::nav_msgs__rosidl_typesupport_cpp
-  cabot_msgs::cabot_msgs__rosidl_typesupport_cpp
-  tf2_geometry_msgs::tf2_geometry_msgs
-  ${OpenCV_LIBS}
-  cv_bridge::cv_bridge
-  boost_system
-  cpr
-  InfluxDB
-
+include_directories(client_node
+  include
+  ${OpenCV_INCLUDE_DIRS}
 )
 
-#ament_target_dependencies(client_node
-#  ${dependencies}
-#)
+ament_target_dependencies(client_node
+  ${dependencies}
+)
+
+target_link_libraries(client_node
+  ${OpenCV_LIBRARIES}
+  InfluxData::InfluxDB
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -89,19 +78,19 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-# ament_python_install_package(cabot_ui)
+ament_python_install_package(cabot_ui)
 
-#install(PROGRAMS
-  #./script/client_node.py
-  #./script/diagnostics_client.py
-  #./script/pose_log_client.py
-  #./script/test_client.py
-  #DESTINATION lib/${PROJECT_NAME}
-  #  )
+install(PROGRAMS
+  ./script/client_node.py
+  ./script/diagnostics_client.py
+  ./script/pose_log_client.py
+  ./script/test_client.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(TARGETS
   client_node
-  DESTINATION lib
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(

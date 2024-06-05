@@ -33,6 +33,7 @@ RUN cd /tmp && \
 	cmake -D INFLUXCXX_TESTING:BOOL=OFF .. && \
 	make install
 
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 COPY launch.sh /launch.sh
 

@@ -23,6 +23,7 @@ find_package(rclpy REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(cabot_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -37,6 +38,7 @@ set(dependencies
   std_msgs
   sensor_msgs
   diagnostic_msgs
+  geometry_msgs
   nav_msgs
   cabot_msgs
   tf2_geometry_msgs
@@ -47,18 +49,34 @@ set(dependencies
   InfluxDB
 )
 
-add_library(cabot_rclcpp_util_lib SHARED
+add_executable(client_node
   src/cabot_rclcpp_util.cpp
   src/geoutil.cpp
   src/client_node.cpp
-  src/diagnostics_client.cpp
-  src/pose_log_client.cpp
-  src/test_client.cpp
 )
 
-ament_target_dependencies(cabot_rclcpp_util_lib
-  ${dependencies}
+target_include_directories(client_node PRIVATE include)
+
+target_link_libraries(client_node
+  rclcpp::rclcpp
+  std_msgs::std_msgs__rosidl_typesupport_cpp
+  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
+  diagnostic_msgs::diagnostic_msgs__rosidl_typesupport_cpp
+  geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
+  nav_msgs::nav_msgs__rosidl_typesupport_cpp
+  cabot_msgs::cabot_msgs__rosidl_typesupport_cpp
+  tf2_geometry_msgs::tf2_geometry_msgs
+  ${OpenCV_LIBS}
+  cv_bridge::cv_bridge
+  boost_system
+  cpr
+  InfluxDB
+
 )
+
+#ament_target_dependencies(client_node
+#  ${dependencies}
+#)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -71,18 +89,18 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_python_install_package(cabot_ui)
+# ament_python_install_package(cabot_ui)
 
-install(PROGRAMS
-  ./script/client_node.py
-  ./script/diagnostics_client.py
-  ./script/pose_log_client.py
-  ./script/test_client.py
-  DESTINATION lib/${PROJECT_NAME}
-  )
+#install(PROGRAMS
+  #./script/client_node.py
+  #./script/diagnostics_client.py
+  #./script/pose_log_client.py
+  #./script/test_client.py
+  #DESTINATION lib/${PROJECT_NAME}
+  #  )
 
 install(TARGETS
-  cabot_rclcpp_util_lib
+  client_node
   DESTINATION lib
 )
 

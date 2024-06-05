@@ -23,7 +23,7 @@ services:
       - CABOT_INFLUXDB_BUCKET
     volumes:
       - ./docker/home:/home/developer/
-      - ${CABOT_ANCHOR_FILE:-./zero-anchor.yaml}:/home/developer/ros2_ws/src/anchor_file.yaml
+      # - ${CABOT_ANCHOR_FILE:-./zero-anchor.yaml}:/home/developer/ros2_ws/src/anchor_file.yaml
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
       - ./cabot-common/cabot_msgs:/home/developer/ros2_ws/src/cabot_msgs
     command:

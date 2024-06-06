@@ -2,6 +2,7 @@
 
 ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   // CaBotRclcppUtil::initialize(this);
+   
   robot_name_ = this->declare_parameter<std::string>("robot_name", "");
   boost::algorithm::split(robot_names_, robot_name_, boost::is_any_of(","));
   for(const std::string& name : robot_names_){
@@ -16,7 +17,6 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   image_left_topic_ = this->declare_parameter<std::string>("image_left_topic", "");
   image_center_topic_ = this->declare_parameter<std::string>("image_center_topic", "");
   image_right_topic_ = this->declare_parameter<std::string>("image_right_topic", "");
-
   // reading anchor
   /*
   if(!anchor_file_.empty()){
@@ -29,7 +29,13 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   }
   */
 
-  influxdb_ = influxdb::InfluxDBFactory::Get(host_ + "?token=" + token_ + "&org=" + org_);
+  // influxdb_ = influxdb::InfluxDBFactory::Get(host_ + "/?db=" + bucket_ + token_);
+  influxdb_ = influxdb::InfluxDBBuilder::http(host_ + "?db=" + bucket_)
+                  .setTimeout(std::chrono::seconds{5})
+                  .setAuthToken(token_)
+                  .setVerifyCertificate(false)
+                  .connect();
+  RCLCPP_INFO(this->get_logger(), "URL: %s", influxdb_.get());
   
   pose_log_sub_ = this->create_subscription<cabot_msgs::msg::PoseLog>(
     "/cabot/pose_log", 10, std::bind(&ClientNode::pose_log_callback, this, std::placeholders::_1));
@@ -43,18 +49,17 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
     "/path_all",10, std::bind(&ClientNode::path_callback, this, std::placeholders::_1));
   battery_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
     battery_topic_, 10, std::bind(&ClientNode::battery_callback, this, std::placeholders::_1));
-  /*
   image_left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    image_left_topic_, 10, std::bind(&ClientNode::image_callback, this, std::placeholders::_1, "left"));
+    image_left_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) { image_callback(msg, "left"); });
   image_center_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    image_center_topic_, 10, std::bind(&ClientNode::image_callback, this, std::placeholders::_1, "center"));
+    image_center_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) { image_callback(msg, "center"); });
   image_right_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    image_right_topic_, 10, std::bind(&ClientNode::image_callback, this, std::placeholders::_1, "right"));
-    */
+    image_right_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) { image_callback(msg, "right"); });
   event_sub_ = this->create_subscription<cabot_msgs::msg::Log>(
     "/cabot/activity_Log", 10, std::bind(&ClientNode::activity_log_callback, this, std::placeholders::_1));
 
   // bridge_ = std::make_shared<cv_bridge::CvBridge>();
+  RCLCPP_INFO(this->get_logger(), "InfluxDB Host: %s", host_.c_str());
 }
 
 /*

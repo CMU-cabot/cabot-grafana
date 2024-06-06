@@ -15,7 +15,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'image_left_topic',
-            default_value=EnvironmentVariable('CABOT_INFLUXDB_IMAGE_LEFT_TOPIC', default_value='')
+            default_value=EnvironmentVariable('CABOT_INFLUXDB_IMAGE_LEFT_TOPIC', default_value='/camera/color/image_raw')
         ),
         DeclareLaunchArgument(
             'image_center_topic',
@@ -23,7 +23,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'image_right_topic',
-            default_value=EnvironmentVariable('CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC', default_value='')
+            default_value=EnvironmentVariable('CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC', default_value='/camera/color/image_raw')
         ),
         DeclareLaunchArgument(
             'pose_interval',

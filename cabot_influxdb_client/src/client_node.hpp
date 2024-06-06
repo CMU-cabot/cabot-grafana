@@ -38,6 +38,7 @@
 
 #include <InfluxDB.h>
 #include <InfluxDBFactory.h>
+#include <InfluxDBBuilder.h>
 #include <Point.h>
 
 //using namespace std::chrono_literals;
@@ -78,7 +79,7 @@ private:
   std::string image_left_topic_;
   std::string image_center_topic_;
   std::string image_right_topic_;
-  std::shared_ptr<influxdb::InfluxDB> influxdb_;
+  std::unique_ptr<influxdb::InfluxDB> influxdb_;
   double anchor_rotate_;
   Throttle throttle_;
 

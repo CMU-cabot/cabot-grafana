@@ -30,6 +30,7 @@ find_package(OpenCV REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost REQUIRED)
 find_package(InfluxDB REQUIRED)
+#find_package(Proj REQUIRED)
 
 set(dependencies
   rclcpp
@@ -45,6 +46,7 @@ set(dependencies
   boost_system
   cpr
   InfluxDB
+  #Proj
 )
 
 add_executable(client_node

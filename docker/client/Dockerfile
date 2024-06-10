@@ -17,6 +17,7 @@ RUN pip3 install \
 RUN apt install -y \
      g++ \
 	 cmake \
+         libproj-dev \
 	 libcurl4-openssl-dev \
 	 libboost1.74-dev \
 	 libboost-system1.74-dev

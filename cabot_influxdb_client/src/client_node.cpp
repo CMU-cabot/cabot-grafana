@@ -29,7 +29,6 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   }
   */
 
-  // influxdb_ = influxdb::InfluxDBFactory::Get(host_ + "/?db=" + bucket_ + token_);
   influxdb_ = influxdb::InfluxDBBuilder::http(host_ + "?db=" + bucket_)
                   .setTimeout(std::chrono::seconds{5})
                   .setAuthToken(token_)

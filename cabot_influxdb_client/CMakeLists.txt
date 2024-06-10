@@ -30,7 +30,10 @@ find_package(OpenCV REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Boost REQUIRED)
 find_package(InfluxDB REQUIRED)
-#find_package(Proj REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PROJ REQUIRED proj)
+find_package(yaml-cpp REQUIRED)
 
 set(dependencies
   rclcpp
@@ -46,7 +49,7 @@ set(dependencies
   boost_system
   cpr
   InfluxDB
-  #Proj
+  PROJ
 )
 
 add_executable(client_node
@@ -58,6 +61,7 @@ add_executable(client_node
 include_directories(client_node
   include
   ${OpenCV_INCLUDE_DIRS}
+  ${PROJ_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(client_node
@@ -67,6 +71,8 @@ ament_target_dependencies(client_node
 target_link_libraries(client_node
   ${OpenCV_LIBRARIES}
   InfluxData::InfluxDB
+  ${PROJ_LIBRARY}
+  yaml-cpp
 )
 
 if(BUILD_TESTING)

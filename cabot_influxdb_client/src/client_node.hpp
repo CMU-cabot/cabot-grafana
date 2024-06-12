@@ -44,9 +44,17 @@
 //using namespace std::chrono_literals;
 
 class Throttle{
+  /*
+  A decorator to throttle function calls. The wrapped function can only be called
+  once every interval_seconds. Subsequent calls within the interval are ignored.
+
+  :param interval_seconds: The minimum time interval between function calls.
+  :return: The wrapper function.
+  */
 public:
   Throttle(double interval_seconds_)
     : interval_(std::chrono::duration<double>(interval_seconds_)), last_called_(std::chrono::steady_clock::now() - std::chrono::duration_cast<std::chrono::seconds>(interval_)){}
+  // Use a mutable object to allow modification in nested scope
   template<typename F, typename... Args>
   void call(F&& f, Args&&... args){
     auto now = std::chrono::steady_clock::now();
@@ -80,9 +88,22 @@ private:
   std::string image_center_topic_;
   std::string image_right_topic_;
   std::unique_ptr<influxdb::InfluxDB> influxdb_;
+  Anchor anchor_;
   double anchor_rotate_;
   Throttle throttle_;
 
+  double pose_interval_;
+  double cmd_vel_interval_;
+  double odom_interval_;
+  double diag_agg_interval_;
+  double battery_interval_;
+  double image_interval_;
+  std::shared_ptr<Throttle> pose_log_throttle_;
+  std::shared_ptr<Throttle> cmd_vel_throttle_;
+  std::shared_ptr<Throttle> odom_throttle_;
+  std::shared_ptr<Throttle> diag_agg_throttle_;
+  std::shared_ptr<Throttle> battery_throttle_;
+  std::shared_ptr<Throttle> image_throttle_;
   rclcpp::Subscription<cabot_msgs::msg::PoseLog>::SharedPtr pose_log_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -94,10 +115,12 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_right_sub_;
   rclcpp::Subscription<cabot_msgs::msg::Log>::SharedPtr event_sub_;
 
+  long long last_error_;
+
   // cv_bridge::CvBridge bridge_;
   //std::mutex image_mutex_;
 
-  //void send_point(const influxdb::Point point);
+  void send_point(influxdb::Point&& point);
   std::chrono::time_point<std::chrono::system_clock> get_nanosec(const rclcpp::Time& stamp);
   void euler_from_quaternion(const geometry_msgs::msg::Quaternion& q, double& roll, double& pitch, double& yaw);
 

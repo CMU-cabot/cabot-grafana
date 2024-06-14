@@ -30,8 +30,9 @@
 
 // represent a 2D point
 Point::Point(double x, double y) : x(x), y(y) {}
-Point::Point(const geometry_msgs::msg::Point& point) : x(point.x), y(point.y) {}
+//Point::Point(const geometry_msgs::msg::Point& point) : x(point.x), y(point.y) {}
 
+/*
 // euclid distance between the instance point and the passed point
 double Point::distance_to(const Point& other) const{
   return std::sqrt(std::pow(x - other.x, 2) + std::pow(y - other.y, 2));
@@ -55,7 +56,15 @@ std::ostream& operator<<(std::ostream& os, const Point& point){
   os << "(" << point.x << ", " << point.y << ")";
   return os;
 }
+*/
 
+std::string Point::toString() const {
+  char buffer[50];
+  snprintf(buffer, sizeof(buffer), "(%.2f, %.2f)", x, y);
+  return std::string(buffer);
+}
+
+/*
 // represent a 2D pose. init with x, y, and r
 Pose::Pose(double x, double y, double r) : Point(x, y), r(r) {}
 Pose::Pose(const geometry_msgs::msg::Pose& pose) : Point(pose.position), r(tf2::getYaw(pose.orientation)) {}
@@ -69,7 +78,12 @@ geometry_msgs::msg::Quaternion Pose::get_orientation() const{
 }
 
 // convert Pose into ROS pose msg
-
+geometry_msgs::msg::PoseStamped Pose::to_pose_stamped_msg() const{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position = to_point_msg();
+  pose.pose.orientation = get_orientation();
+  return pose;
+}
 
 // convert Pose into ROS pose msg
 geometry_msgs::msg::Pose Pose::to_pose_msg() const{
@@ -92,58 +106,68 @@ std::ostream& operator<<(std::ostream& os, const Pose& pose){
   os << "(" << pose.x << ", " << pose.y << ")[" << pose.r << " rad]";
   return os;
 }
+*/
 
 // represent a global coordinate. init with lat, and lng
 Latlng::Latlng(double lat, double lng) : lat(lat), lng(lng) {}
 
+/*
 // distance between the instance latlng and the passed latlng
 double Latlng::distance_to(const Latlng& other) const{
-  PJ_CONTEXT* C;
-  PJ* P;
-  PJ* P_for_GIS;
-
-  C = proj_context_create();
-  P = proj_create_crs_to_crs(C, "EPSG:4326", "EPSG:3857", NULL);
-  if(0 == P){
-    fprintf(stderr, "Oops\n");
-    return -1;
+  PJ_CONTEXT* C = proj_context_create();
+  PJ* P = proj_create_crs_to_crs(C, "EPSG:4326", "EPSG:3857", NULL);
+  if(P == nullptr){
+    proj_context_destroy(C);
+    throw std::runtime_error("Failed to create projection");
   }
-
-  P_for_GIS = proj_normalize_for_visualization(C, P);
-  if(0 == P_for_GIS){
-    fprintf(stderr, "Oops\n");
-    return -1;
+  PJ* P_for_GIS  = proj_normalize_for_visualization(C, P);
+  if(P_for_GIS == nullptr){
+    proj_destroy(P);
+    proj_context_destroy(C);
+    throw std::runtime_error("Failed to normalize projection");
   }
-
   PJ_COORD a, b;
-
   a.lp.lam = proj_torad(lng);
   a.lp.phi = proj_torad(lat);
   b.lp.lam = proj_torad(other.lng);
   b.lp.phi = proj_torad(other.lat);
-
   a = proj_trans(P_for_GIS, PJ_FWD, a);
   b = proj_trans(P_for_GIS, PJ_FWD, b);
-
+  proj_destroy(P_for_GIS);
   proj_destroy(P);
   proj_context_destroy(C);
-
-  return std::sqrt((a.xy.x - b.xy.x) * (a.xy.x - b.xy.x) + (a.xy.y - b.xy.y) * (a.xy.y - b.xy.y));
+  return std::sqrt(std::pow(a.xy.x - b.xy.x, 2) + std::pow(a.xy.y - b.xy.y, 2));
 }
 
 std::ostream& operator<<(std::ostream& os, const Latlng& latlng){
   os << "[" << latlng.lat << ", " << latlng.lng << "]";
   return os;
 }
+*/
+
+std::string Latlng::toString() const {
+  char buffer[50];
+  snprintf(buffer, sizeof(buffer), "(%.7f, %.7f)", lat, lng);
+  return std::string(buffer);
+}
 
 // represent an anchor point. init with lat, lng, and rotate
 Anchor::Anchor(double lat, double lng, double rotate) : Latlng(lat, lng), rotate(rotate) {}
 
+/*
 std::ostream& operator<<(std::ostream& os, const Anchor& anchor){
   os << "[" << anchor.lat << ", " << anchor.lng << "](" << anchor.rotate << " rad)";
   return os;
 }
+*/
 
+std::string Anchor::toString() const {
+  char buffer[70];
+  snprintf(buffer, sizeof(buffer), "[%.7f, %.7f](%.2f)", lat, lng, rotate);
+  return std::string(buffer);
+}
+
+/*
 // this class should be used with Point
 TargetPlace::TargetPlace(double x, double y, double r, double angle, int floor)
   : Pose(x, y, r), _angle(angle), _floor(floor), _was_approaching(false), _was_approached(false), _was_passed(false) {}
@@ -192,27 +216,33 @@ bool TargetPlace::is_passed(const Pose& pose){
 }
 
 bool TargetPlace::in_angle(const Pose& pose) const{
-  double diff = std::fabs(r - pose.r);
-  return diff <= _angle || diff >= (2 * M_PI - _angle);
+  // double diff = std::fabs(r - pose.r);
+  // return diff <= _angle || diff >= (2 * M_PI - _angle);
+  double angle_to_pose = std::atan2(pose.y - y, pose.x - x);
+  double delta_angle = std::fabs(angle_to_pose - r);
+  if(delta_angle > M_PI){
+    delta_angle = 2.0 * M_PI - delta_angle;
+  }
+  return delta_angle < _angle;
 }
 
 // get Quaternion message from array
 geometry_msgs::msg::Quaternion msg_from_q(const std::vector<double>& q){
-  geometry_msgs::msg::Quaternion quat;
-  quat.x = q[0];
-  quat.y = q[1];
-  quat.z = q[2];
-  quat.w = q[3];
-  return quat;
+  geometry_msgs::msg::Quaternion msg;
+  msg.x = q[0];
+  msg.y = q[1];
+  msg.z = q[2];
+  msg.w = q[3];
+  return msg;
 }
 
 // get Point message from array
 geometry_msgs::msg::Point msg_from_p(const std::vector<double>& p){
-  geometry_msgs::msg::Point point;
-  point.x = p[0];
-  point.y = p[1];
-  point.z = p[2];
-  return point;
+  geometry_msgs::msg::Point msg;
+  msg.x = p[0];
+  msg.y = p[1];
+  msg.z = p[2];
+  return msg;
 }
 
 // get Pose message from pose and quaternion array
@@ -251,7 +281,9 @@ std::vector<double> q_from_points(const geometry_msgs::msg::Point& msg1, const g
 
 // get inverse quaternion
 std::vector<double> q_inverse(const std::vector<double>& q){
-  return {-q[0], -q[1], -q[2], q[3]};
+  tf2::Quaternion quat(q[0], q[1], q[2], q[3]);
+  quat.inverse();
+  return {quat.x(), quat.y(), quat.z(), quat.w()};
 }
 
 std::vector<double> q_diff(const std::vector<double>& q1, const std::vector<double>& q2){
@@ -275,12 +307,10 @@ double get_yaw(const std::vector<double>& q){
 
 // pose1 and pose2 is supporsed to be facing
 bool in_angle(const geometry_msgs::msg::Pose& pose1, const geometry_msgs::msg::Pose& pose2, double margin_in_degree){
-  /*
-  pose1: robot pose
-  pose2: POI pose
+  // pose1: robot pose
+  // pose2: POI pose
   margin_in_degree: POI angle margin in degree
   return True if robot orientation is in POI angle
-  */
   double margin = margin_in_degree * M_PI / 180.0;
   // check orientation diff from pose2 orientation to rotated pose1 orientation
   // check orientation diff from pose2 orientation to rotated p1->p2 orientation
@@ -292,10 +322,8 @@ bool in_angle(const geometry_msgs::msg::Pose& pose1, const geometry_msgs::msg::P
 }
 
 bool diff_in_angle(const std::vector<double>& quat1, const std::vector<double>& quat2, double margin_in_degree){
-  /*
-  margin_in_degree: angle margin in degree
-  return True if two poses in margin
-  */
+  //margin_in_degree: angle margin in degree
+  //return True if two poses in margin
   tf2::Quaternion q1(quat1[0], quat1[1], quat1[2], quat1[3]);
   tf2::Quaternion q2(quat2[0], quat2[1], quat2[2], quat2[3]);
   // check orientation diff from pose2 orientation to rotated pose1 orientation
@@ -309,9 +337,7 @@ bool diff_in_angle(const std::vector<double>& quat1, const std::vector<double>& 
 }
 
 double diff_angle(const geometry_msgs::msg::Quaternion& msg1, const geometry_msgs::msg::Quaternion& msg2){
-  /*
-  return yaw difference
-  */
+  //return yaw difference
   tf2::Quaternion q1;
   tf2::Quaternion q2;
   tf2::convert(msg1, q1);
@@ -333,13 +359,11 @@ double get_rotation(const geometry_msgs::msg::Quaternion& src, const geometry_ms
 }
 
 Point get_projected_point_to_line(const Point& point, const Point& line_point, const geometry_msgs::msg::Quaternion& line_orientation){
-  /*
-  calculate the point that project a given point perpendicular to given line segment
-  point: input point in numpy.array
-  line_point: input line segment start point in numpy.array
-  line_orientation: input line segment orientation in geometry_msgs.msg.Quaternion
-  return point in numpy.array
-  */
+  //calculate the point that project a given point perpendicular to given line segment
+  //point: input point in numpy.array
+  //line_point: input line segment start point in numpy.array
+  //line_orientation: input line segment orientation in geometry_msgs.msg.Quaternion
+  //return point in numpy.array
   double yaw = tf2::getYaw(line_orientation);
   double x_diff = point.x - line_point.x;
   double y_diff = point.y - line_point.y;
@@ -348,12 +372,10 @@ Point get_projected_point_to_line(const Point& point, const Point& line_point, c
 }
 
 bool is_forward_point(const geometry_msgs::msg::Pose& pose1, const geometry_msgs::msg::Point& pose2){
-  /*
-  calculate if the given point is in forward direction of the given pose
-  pose1: robot pose
-  pose2: POI pose
-  return True if the point is in forward direction of the robot
-  */
+  //calculate if the given point is in forward direction of the given pose
+  //pose1: robot pose
+  //pose2: POI pose
+  //return True if the point is in forward direction of the robot
   double yaw = tf2::getYaw(pose1.orientation);
   double x_diff = pose2.x - pose1.position.x;
   double y_diff = pose2.y - pose1.position.y;
@@ -361,6 +383,7 @@ bool is_forward_point(const geometry_msgs::msg::Pose& pose1, const geometry_msgs
   double diff = std::fabs(yaw - direction);
   return diff < M_PI_2 || diff > 3 * M_PI_2;
 }
+*/
 
 // get anchor
 Anchor get_anchor(const std::string& anchor_file){
@@ -374,100 +397,95 @@ Anchor get_anchor(const std::string& anchor_file){
 
 // convert a LatLng point into a Mercator point
 Point latlng2mercator(const Latlng& latlng){
-  if(latlng.lat < -85.05112878 || latlng.lat > 85.05112878){
-    throw std::runtime_error("latitude over limit");
+  PJ* P = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:4326", "EPSG:3857", NULL);
+  if(P == nullptr){
+    proj_destroy(P);
+    throw std::runtime_error("Failed to create projection");
   }
-  PJ_CONTEXT* C = proj_context_create();
-  PJ* P = proj_create_crs_to_crs(C, "EPSG:4326", "EPSG:3857", NULL);
-  if(0 == P){
-    fprintf(stderr, "Oops\n");
-    return Point();
+  PJ* P_for_GIS  = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P);
+  if(P_for_GIS == nullptr){
+    proj_destroy(P);
+    proj_destroy(P_for_GIS);
+    throw std::runtime_error("Failed to normalize projection");
   }
-  PJ_COORD a, b;
-
-  a.lp.lam = proj_torad(latlng.lng);
-  a.lp.phi = proj_torad(latlng.lat);
-
-  a = proj_trans(P, PJ_FWD, a);
-
   proj_destroy(P);
-  proj_context_destroy(C);
-
-  return Point(a.xy.x, a.xy.y);
+  PJ_COORD a, b;
+  a = proj_coord(latlng.lng, latlng.lat, 0, 0);
+  b = proj_trans(P_for_GIS, PJ_FWD, a);
+  proj_destroy(P_for_GIS);
+  return Point(b.xy.x, b.xy.y);
 }
 
 // convert a Mercatro point into a LatLng point
 Latlng mercator2latlng(const Point& mercator){
-  PJ_CONTEXT* C = proj_context_create();
-  PJ* P = proj_create_crs_to_crs(C, "EPSG:3857", "EPSG:4326", NULL);
-  if(0 == P){
-    fprintf(stderr, "Oops\n");
-    return Latlng();
+  PJ* P = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:3857", "EPSG:4326", NULL);
+  if(P == nullptr){
+    proj_destroy(P);
+    throw std::runtime_error("Failed to create projection");
   }
-
-  PJ_COORD a, b;
-
-  a.xy.x = mercator.x;
-  a.xy.y = mercator.y;
-
-  a = proj_trans(P, PJ_INV, a);
-
+  PJ* P_for_GIS  = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P);
+  if(P_for_GIS == nullptr){
+    proj_destroy(P);
+    proj_destroy(P_for_GIS);
+    throw std::runtime_error("Failed to normalize projection");
+  }
   proj_destroy(P);
-  proj_context_destroy(C);
-
-  return Latlng(proj_todeg(a.lp.phi), proj_todeg(a.lp.lam));
+  PJ_COORD a, b;
+  a = proj_coord(mercator.x, mercator.y, 0, 0);
+  b = proj_trans(P_for_GIS, PJ_FWD, a);
+  proj_destroy(P_for_GIS);
+  return Latlng(b.xy.y, b.xy.x);
 }
 
 // get a resolution at an anchor point
 double get_point_resolution(const Anchor& anchor){
-  PJ_CONTEXT* C = proj_context_create();
-  PJ* P = proj_create_crs_to_crs(C, "EPSG:4326", "EPSG:3857", NULL);
-  if(0 == P){
-    fprintf(stderr, "Oops\n");
-    return -1;
-  }
-
-  PJ_COORD a, b;
-
-  a.lp.lam = proj_torad(anchor.lng);
-  a.lp.phi = proj_torad(anchor.lat);
-
-  a = proj_trans(P, PJ_FWD, a);
-
-  proj_destroy(P);
-  proj_context_destroy(C);
-
-  return std::cos(proj_torad(anchor.lat)) * 2 * M_PI * 6378137 / 256;
+  const double RADIUS = 6378137;
+  return 1.0 / cosh(anchor.lat / RADIUS);
 }
 
 // convert a Mercator point into a local point in the anchor coordinate
 Point mercator2xy(const Point& src_mercator, const Anchor& anchor){
-  Point anchor_mercator = latlng2mercator(anchor);
-  double rotate = anchor.rotate;
-  double dx = src_mercator.x - anchor_mercator.x;
-  double dy = src_mercator.y - anchor_mercator.y;
-  double cos_r = std::cos(rotate);
-  double sin_r = std::sin(rotate);
-  return Point(dx * cos_r - dy * sin_r, dx * sin_r + dy * cos_r);
+  double res = get_point_resolution(anchor);
+  double dx = (src_mercator.x - latlng2mercator(anchor).x) * res;
+  double dy = (src_mercator.y - latlng2mercator(anchor).y) * res;
+  double rad = anchor.rotate / 180.0 * M_PI;
+  double c = cos(rad);
+  double s = sin(rad);
+  double x = dx * c - dy * s;
+  double y = dx * s + dy * c;
+  return Point(x, y);
 }
 
 // convert a local point in the anchor coordinate into a Mercator point
 Point xy2mercator(const Point& src_xy, const Anchor& anchor){
-  Point anchor_mercator = latlng2mercator(anchor);
-  double rotate = anchor.rotate;
-  double cos_r = std::cos(-rotate);
-  double sin_r = std::sin(-rotate);
-  double dx = src_xy.x * cos_r - src_xy.y * sin_r;
-  double dy = src_xy.x * sin_r + src_xy.y * cos_r;
-  return Point(dx + anchor_mercator.x, dy + anchor_mercator.y);
+  double res = get_point_resolution(anchor);
+  double r = get_point_resolution(anchor);
+  double x = src_xy.x;
+  double y = src_xy.y;
+  double rad = - anchor.rotate / 180.0 * M_PI;
+  double c = cos(rad);
+  double s = sin(rad);
+  double dx = (x * c - y * s) / r;
+  double dy = (x * s + y * c) / r;
+  Point mercator = latlng2mercator(anchor);
+  return Point(mercator.x + dx / res, mercator.y + dy /res);
 }
 
+/*
 // convert a global point into a local point in the anchor coordinate
 Point global2local(const Latlng& latlng, const Anchor& anchor){
-  return mercator2xy(latlng2mercator(latlng), anchor);
+  Point mercator = latlng2mercator(latlng);
+  Point anchor_mercator = latlng2mercator(anchor);
+  double x = mercator.x - anchor_mercator.x;
+  double y = mercator.y - anchor_mercator.y;
+  double cos_rotate = std::cos(-anchor.rotate);
+  double sin_rotate = std::sin(-anchor.rotate);
+  return Point(x * cos_rotate - y * sin_rotate, x * sin_rotate - y * cos_rotate);
 }
+*/
 
 // convert a local point in the anchor coordinate into the global point
-Latlng local2global(const Point& xy, const Anchor& anchor){
-  return mercator2latlng(xy2mercator(xy, anchor));
+Latlng local2global(const Point& xy, Anchor& anchor){
+  Point mercator = xy2mercator(xy, anchor);
+  return mercator2latlng(mercator);
 }

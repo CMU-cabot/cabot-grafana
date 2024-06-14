@@ -32,7 +32,8 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   */   
   robot_name_ = this->declare_parameter<std::string>("robot_name", "");
   boost::algorithm::split(robot_names_, robot_name_, boost::is_any_of(","));
-  for(const std::string& name : robot_names_){
+  for(std::vector<std::string>::const_iterator robot_name = robot_names_.begin(); robot_name != robot_names_.end(); robot_name++){
+    const std::string& name = *robot_name;
     std::cout << name << std::endl;
   }
   host_ = this->declare_parameter<std::string>("host", "");
@@ -44,14 +45,15 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   image_left_topic_ = this->declare_parameter<std::string>("image_left_topic", "");
   image_center_topic_ = this->declare_parameter<std::string>("image_center_topic", "");
   image_right_topic_ = this->declare_parameter<std::string>("image_right_topic", "");
+  RCLCPP_INFO(this->get_logger(), "image_topics is %s, %s, %s", image_left_topic_.c_str(), image_center_topic_.c_str(), image_right_topic_.c_str());
+  RCLCPP_INFO(this->get_logger(), "Anchor file is %s", anchor_file_.c_str());
   if(!anchor_file_.empty()){
-    anchor_ = get_anchor(anchor_file_);
-    /*
-    if(anchor_.is_valid()){
-      // logger_.info(F"anchor file is {anchor_file_}");
+    Anchor temp  = get_anchor(anchor_file_);
+    if(temp.lat != 0.0 || temp.lng != 0.0 || temp.rotate != 0.0){
+      anchor_ = temp;
     }else{
-      // logger_.warn(F"Failed to load anchor file is {anchor_file_}");
-    }*/
+      RCLCPP_WARN(this->get_logger(), "Could not load anchor_file \"%s\"",anchor_file_.c_str());
+    }
   }
   pose_interval_ = this->declare_parameter<double>("pose_interval", 1.0);
   cmd_vel_interval_ = this->declare_parameter<double>("cmd_vel_interval", 0.2);
@@ -64,7 +66,9 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
   odom_throttle_ = std::make_shared<Throttle>(odom_interval_);
   diag_agg_throttle_ = std::make_shared<Throttle>(diag_agg_interval_);
   battery_throttle_ = std::make_shared<Throttle>(battery_interval_);
-  image_throttle_ = std::make_shared<Throttle>(image_interval_);
+  image_left_throttle_ = std::make_shared<Throttle>(image_interval_);
+  image_center_throttle_ = std::make_shared<Throttle>(image_interval_);
+  image_right_throttle_ = std::make_shared<Throttle>(image_interval_);
 
   influxdb_ = influxdb::InfluxDBBuilder::http(host_ + "?db=" + bucket_)
                   .setTimeout(std::chrono::seconds{5})
@@ -91,24 +95,22 @@ ClientNode::ClientNode() : Node("client_node"), throttle_(1.0){
       battery_throttle_->call(&ClientNode::battery_callback, this, msg); });
   image_left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     image_left_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) {
-      image_throttle_->call(&ClientNode::image_callback, this, msg, "left"); });
+      image_left_throttle_->call(&ClientNode::image_callback, this, msg, "left"); });
   image_center_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     image_center_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) {
-      image_throttle_->call(&ClientNode::image_callback, this, msg, "center"); });
+      image_center_throttle_->call(&ClientNode::image_callback, this, msg, "center"); });
   image_right_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     image_right_topic_, 10, [this] (const sensor_msgs::msg::Image::SharedPtr msg) {
-      image_throttle_->call(&ClientNode::image_callback, this, msg, "right"); });
+      image_right_throttle_->call(&ClientNode::image_callback, this, msg, "right"); });
   event_sub_ = this->create_subscription<cabot_msgs::msg::Log>(
     "/cabot/activity_Log", 10, std::bind(&ClientNode::activity_log_callback, this, std::placeholders::_1));
-
-  // bridge_ = std::make_shared<cv_bridge::CvBridge>();
   RCLCPP_INFO(this->get_logger(), "InfluxDB Host: %s", host_.c_str());
 }
 
 void ClientNode::send_point(influxdb::Point&& point){
   // prevent too much connection errors
-  auto now = std::chrono::system_clock::now();
-  auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  long long now_sec = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
   if(last_error_ != 0 && now_sec - last_error_ < 1.0){
     return;
   }
@@ -120,17 +122,13 @@ void ClientNode::send_point(influxdb::Point&& point){
   }
 }
 
-
 std::chrono::time_point<std::chrono::system_clock> ClientNode::get_nanosec(const rclcpp::Time& stamp){
-  using namespace std::chrono;
-
   if(stamp == rclcpp::Time(0,0) || stamp.seconds() < 1e6){
-    return system_clock::now();
+    return std::chrono::system_clock::now();
   }
-  auto ns =nanoseconds(static_cast<uint64_t>(stamp.seconds() * 1e9) + stamp.nanoseconds());
-  return time_point<system_clock, nanoseconds>(ns);
+  std::chrono::nanoseconds ns =std::chrono::nanoseconds(static_cast<uint64_t>(stamp.seconds() * 1e9) + stamp.nanoseconds());
+  return std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>(ns);
 }
-
 
 void ClientNode::euler_from_quaternion(const geometry_msgs::msg::Quaternion& q, double& roll, double& pitch, double& yaw){
   double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
@@ -152,7 +150,7 @@ void ClientNode::pose_log_callback(const cabot_msgs::msg::PoseLog::SharedPtr msg
   double roll, pitch, yaw;
   euler_from_quaternion(msg->pose.orientation, roll, pitch, yaw);
   int count = 0;
-  for(const auto& robot_name : robot_name_){
+  for(std::vector<std::string>::const_iterator robot_name = robot_names_.begin(); robot_name != robot_names_.end(); robot_name++){
     influxdb::Point point = influxdb::Point{"pose_data"}
         .addField("lat", msg->lat /*+ 0.0005 * count*/)
         .addField("lng", msg->lng /*+ 0.0005 * count*/)
@@ -195,8 +193,9 @@ std::vector<std::string> ClientNode::split(const std::string& str, char delimite
 
 void ClientNode::diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg){
   std::unordered_map<std::string, int> diagnostics;
-  for(const auto& state : msg->status){
-  auto items = split(state.name, '/');
+  for(std::vector<diagnostic_msgs::msg::DiagnosticStatus>::const_iterator diagnosticstatus = msg->status.begin(); diagnosticstatus != msg->status.end(); diagnosticstatus++){
+    const diagnostic_msgs::msg::DiagnosticStatus& state = *diagnosticstatus;
+    std::vector<std::string> items = split(state.name, '/');
     if(items.size() != 3){
       continue;
     }
@@ -209,8 +208,10 @@ void ClientNode::diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArra
       diagnostics[name] = level;
     }
   }
-  for(const auto& robot_name : robot_name_){
-    for(const auto& [name, level] : diagnostics){
+  for(std::vector<std::string>::const_iterator robot_name = robot_names_.begin(); robot_name != robot_names_.end(); robot_name++){
+    for(std::unordered_map<std::string, int>::const_iterator diagnostic = diagnostics.begin(); diagnostic != diagnostics.end(); diagnostic++){
+      const std::string& name = diagnostic->first;
+      int level = diagnostic->second;
       influxdb::Point point = influxdb::Point{"diagnostic"}
           .addField("level", level)
           .addTag("name", name)
@@ -222,17 +223,20 @@ void ClientNode::diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArra
 }
 
 void ClientNode::path_callback(const nav_msgs::msg::Path::SharedPtr msg){
-  auto group = get_nanosec(rclcpp::Time());
-  auto epoch = std::chrono::duration_cast<std::chrono::milliseconds>(group.time_since_epoch()).count();
+  std::chrono::time_point<std::chrono::system_clock> group = get_nanosec(rclcpp::Time());
+  long long epoch = std::chrono::duration_cast<std::chrono::milliseconds>(group.time_since_epoch()).count();
   int count = 0;
-  for(const auto& robot_name : robot_name_){
-    for(const auto& pose_stamped : msg->poses){
-      const auto& position = pose_stamped.pose.position;
-      auto localp = Point(position.x, position.y);
-      //Latlng globalp = local2global(localp, anchor_); 
+  for(std::vector<std::string>::const_iterator robot_name = robot_names_.begin(); robot_name != robot_names_.end(); robot_name++){
+    for(std::vector<geometry_msgs::msg::PoseStamped>::const_iterator pose = msg->poses.begin(); pose != msg->poses.end(); pose++){
+      const geometry_msgs::msg::PoseStamped& pose_stamped = *pose;
+      const geometry_msgs::msg::Point& position = pose_stamped.pose.position;
+      Point localp = Point(position.x, position.y);
+      Latlng globalp = local2global(localp, anchor_);
+      std::string lat = std::to_string(globalp.lat);
+      std::string lng = std::to_string(globalp.lng);
       influxdb::Point point = influxdb::Point{"plan"}
-          .addField("lat", "35.619135") //incomplete
-          .addField("lng", "139.7768801") //incomplete
+          .addField("lat", lat)
+          .addField("lng", lng)
           .addField("group", static_cast<int64_t>(epoch))
           .addTag("robot_name", robot_name_)
 	  .setTimestamp(get_nanosec(rclcpp::Time())); // need to put point in different time
@@ -306,8 +310,8 @@ std::string ClientNode::base64_encode(const unsigned char *data, size_t len){
 }
 
 void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg){
-  //logger
-  for(const auto& robot_name : robot_name_){
+  RCLCPP_INFO(this->get_logger(), "%s", msg->text.c_str());
+  for(std::vector<std::string>::const_iterator robot_name = robot_names_.begin(); robot_name != robot_names_.end(); robot_name++){
     if(msg->category == "tour-text"){
       influxdb::Point point = influxdb::Point{"tour"}
           .addField("data", msg->text)
@@ -327,8 +331,9 @@ void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg
 
 int main(int argc, char ** argv){
   rclcpp::init(argc, argv);
-  auto node_ = std::make_shared<ClientNode>();
+  std::shared_ptr<ClientNode> node_ = std::make_shared<ClientNode>();
   rclcpp::spin(node_);
   rclcpp::shutdown();
   return 0;
+std::shared_ptr<Throttle> image_throttle_;
 }

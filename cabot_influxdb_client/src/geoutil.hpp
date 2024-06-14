@@ -35,11 +35,12 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/utils.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <yaml-cpp/yaml.h>
 #include <cmath>
 #include <vector>
 #include <string>
+#include <cstdio>
 #include <iostream>
 
 #include <cassert>
@@ -54,14 +55,16 @@
 class Point{
 public:
   double x, y;
-  Point(double x = 0.0, double y = 0.0);
-  Point(const geometry_msgs::msg::Point& point);
-  double distance_to(const Point& other) const;
-  Point interpolate(const Point& other, double ratio) const;
-  geometry_msgs::msg::Point to_point_msg() const;
+  Point(double x, double y);
+  //Point(const geometry_msgs::msg::Point& point);
+  //double distance_to(const Point& other) const;
+  //Point interpolate(const Point& other, double ratio) const;
+  //geometry_msgs::msg::Point to_point_msg() const;
   friend std::ostream& operator<<(std::ostream& os, const Point& point);
+  std::string toString() const;
 };
 
+/*
 class Pose : public Point{
 public:
   double r;
@@ -71,26 +74,29 @@ public:
   geometry_msgs::msg::Quaternion get_orientation() const;
   static Pose from_pose_msg(const geometry_msgs::msg::Pose& msg);
   geometry_msgs::msg::Pose to_pose_msg() const;
-  //to_pose_stamped_msg
+  geometry_msgs::msg::PoseStamped to_pose_stamped_msg() const;
   friend std::ostream& operator<<(std::ostream& os, const Pose& pose);
 };
+*/
 
 class Latlng{
 public:
   double lat, lng;
-  Latlng(double lat = 0.0, double lng = 0.0);
-  double distance_to(const Latlng& other) const;
+  Latlng(double lat, double lng);
+  //double distance_to(const Latlng& other) const;
   friend std::ostream& operator<<(std::ostream& os, const Latlng& latlng);
+  std::string toString() const;
 };
-
 
 class Anchor : public Latlng{
 public:
-  double rotate;
+  double rotate = 0.0 ;
   Anchor(double lat = 0.0, double lng = 0.0, double rotate = 0.0);
   friend std::ostream& operator<<(std::ostream& os, const Anchor& anchor);
+  std::string toString() const;
 };
 
+/*
 class TargetPlace : public Pose{
 public:
   double _angle;
@@ -110,7 +116,9 @@ private:
   bool _was_passed;
   Pose _pose_passed;
 };
- 
+*/
+
+/*
 geometry_msgs::msg::Quaternion msg_from_q(const std::vector<double>& q);
 geometry_msgs::msg::Point msg_from_p(const std::vector<double>& p);
 geometry_msgs::msg::Pose msg_from_pq(const std::vector<double>& p, const std::vector<double>& q);
@@ -126,14 +134,15 @@ double diff_angle(const geometry_msgs::msg::Quaternion& msg1, const geometry_msg
 double get_rotation(const geometry_msgs::msg::Quaternion& src, const geometry_msgs::msg::Quaternion& target);
 Point get_projected_point_to_line(const Point& point, const Point& line_point, const geometry_msgs::msg::Quaternion& line_orientation);
 bool is_forward_point(const Point& pose1, const geometry_msgs::msg::Point& pose2);
+*/
 
-Point latlng2mercator(const std::string& latlng);
+Point latlng2mercator(const Latlng& latlng);
 Latlng mercator2latlng(const Point& mercator);
 double get_point_resolution(const Anchor& anchor);
 Point mercator2xy(const Point& src_mercator, const Anchor& anchor);
 Point xy2mercator(const Point& src_xy, const Anchor& anchor);
-Point global2local(const Latlng& latlng, const Anchor& anchor);
-Latlng local2global(const Point& xy, const Anchor& anchor);
+//Point global2local(const Latlng& latlng, const Anchor& anchor);
+Latlng local2global(const Point& xy, Anchor& anchor);
 Anchor get_anchor(const std::string& anchor_file);
 
 #endif  // GEOUTIL_HPP_

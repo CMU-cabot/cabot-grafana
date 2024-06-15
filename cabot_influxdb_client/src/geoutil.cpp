@@ -458,8 +458,11 @@ Point mercator2xy(const Point& src_mercator, const Anchor& anchor){
 
 // convert a local point in the anchor coordinate into a Mercator point
 Point xy2mercator(const Point& src_xy, const Anchor& anchor){
-  double res = get_point_resolution(anchor);
-  double r = get_point_resolution(anchor);
+  Point mercator = latlng2mercator(anchor);
+  Anchor temp;
+  temp.lng = mercator.x;
+  temp.lat = mercator.y;
+  double r = get_point_resolution(temp);
   double x = src_xy.x;
   double y = src_xy.y;
   double rad = - anchor.rotate / 180.0 * M_PI;
@@ -467,8 +470,7 @@ Point xy2mercator(const Point& src_xy, const Anchor& anchor){
   double s = sin(rad);
   double dx = (x * c - y * s) / r;
   double dy = (x * s + y * c) / r;
-  Point mercator = latlng2mercator(anchor);
-  return Point(mercator.x + dx / res, mercator.y + dy /res);
+  return Point(mercator.x + dx, mercator.y + dy);
 }
 
 /*

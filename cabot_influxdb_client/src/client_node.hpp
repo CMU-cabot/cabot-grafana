@@ -141,7 +141,6 @@ private:
   void pose_log_callback(const cabot_msgs::msg::PoseLog::SharedPtr msg);
   void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
-  std::vector<std::string> split(const std::string& str, char delimiter);
   void diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg);
   void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
   void battery_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);

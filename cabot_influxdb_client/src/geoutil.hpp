@@ -56,34 +56,14 @@ class Point{
 public:
   double x, y;
   Point(double x, double y);
-  //Point(const geometry_msgs::msg::Point& point);
-  //double distance_to(const Point& other) const;
-  //Point interpolate(const Point& other, double ratio) const;
-  //geometry_msgs::msg::Point to_point_msg() const;
   friend std::ostream& operator<<(std::ostream& os, const Point& point);
   std::string toString() const;
 };
-
-/*
-class Pose : public Point{
-public:
-  double r;
-  Pose(double x = 0.0, double y = 0.0, double r = 0.0);
-  Pose(const geometry_msgs::msg::Pose& pose);
-  //pose_from_point
-  geometry_msgs::msg::Quaternion get_orientation() const;
-  static Pose from_pose_msg(const geometry_msgs::msg::Pose& msg);
-  geometry_msgs::msg::Pose to_pose_msg() const;
-  geometry_msgs::msg::PoseStamped to_pose_stamped_msg() const;
-  friend std::ostream& operator<<(std::ostream& os, const Pose& pose);
-};
-*/
 
 class Latlng{
 public:
   double lat, lng;
   Latlng(double lat, double lng);
-  //double distance_to(const Latlng& other) const;
   friend std::ostream& operator<<(std::ostream& os, const Latlng& latlng);
   std::string toString() const;
 };
@@ -96,52 +76,10 @@ public:
   std::string toString() const;
 };
 
-/*
-class TargetPlace : public Pose{
-public:
-  double _angle;
-  int _floor;
-  TargetPlace(double x = 0.0, double y = 0.0, double r = 0.0, double angle = 0.0, int floor = 0);
-  void reset_target();
-  bool in_angle(const Pose& pose) const;
-  bool is_approaching(const Pose& pose);
-  bool is_approached(const Pose& pose);
-  bool is_passed(const Pose& pose);
-
-private:
-  bool _was_approaching;
-  Pose _pose_approaching;
-  bool _was_approached;
-  Pose _pose_approached;
-  bool _was_passed;
-  Pose _pose_passed;
-};
-*/
-
-/*
-geometry_msgs::msg::Quaternion msg_from_q(const std::vector<double>& q);
-geometry_msgs::msg::Point msg_from_p(const std::vector<double>& p);
-geometry_msgs::msg::Pose msg_from_pq(const std::vector<double>& p, const std::vector<double>& q);
-std::vector<double> q_from_msg(const geometry_msgs::msg::Quaternion& msg);
-std::vector<double> p_from_msg(const geometry_msgs::msg::Point& msg);
-std::vector<double> q_from_points(const geometry_msgs::msg::Point& msg1, const geometry_msgs::msg::Point& msg2);
-std::vector<double> q_inverse(const std::vector<double>& q);
-std::vector<double> q_diff(const std::vector<double>& q1, const std::vector<double>& q2);
-double get_yaw(const std::vector<double>& q);
-bool in_angle(const geometry_msgs::msg::Pose& pose1, const geometry_msgs::msg::Pose& pose2, double margin_in_degree);
-bool diff_in_angle(const std::vector<double>& quat1, const std::vector<double>& quat2, double margin_in_degree);
-double diff_angle(const geometry_msgs::msg::Quaternion& msg1, const geometry_msgs::msg::Quaternion& msg2);
-double get_rotation(const geometry_msgs::msg::Quaternion& src, const geometry_msgs::msg::Quaternion& target);
-Point get_projected_point_to_line(const Point& point, const Point& line_point, const geometry_msgs::msg::Quaternion& line_orientation);
-bool is_forward_point(const Point& pose1, const geometry_msgs::msg::Point& pose2);
-*/
-
 Point latlng2mercator(const Latlng& latlng);
 Latlng mercator2latlng(const Point& mercator);
 double get_point_resolution(const Anchor& anchor);
-Point mercator2xy(const Point& src_mercator, const Anchor& anchor);
 Point xy2mercator(const Point& src_xy, const Anchor& anchor);
-//Point global2local(const Latlng& latlng, const Anchor& anchor);
 Latlng local2global(const Point& xy, Anchor& anchor);
 Anchor get_anchor(const std::string& anchor_file);
 

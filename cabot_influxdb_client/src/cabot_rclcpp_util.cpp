@@ -25,6 +25,7 @@
 std::shared_ptr<CaBotRclcppUtil> CaBotRclcppUtil::instance_ = nullptr;
 std::mutex CaBotRclcppUtil::mutex_;
 
+// This utility class holds a node instance for convenience
 void CaBotRclcppUtil::initialize(std::shared_ptr<rclcpp::Node> node){
   if(!instance_){
     std::lock_guard<std::mutex> lock(mutex_);
@@ -44,7 +45,7 @@ std::shared_ptr<CaBotRclcppUtil> CaBotRclcppUtil::instance(){
   return instance_;
 }
 
-/*This utility class holds a node instance for convenience*/
+// initialize
 CaBotRclcppUtil::CaBotRclcppUtil(std::shared_ptr<rclcpp::Node> node)
   : node_(node), logger_(node->get_logger()), clock_(node->get_clock()) {}
 

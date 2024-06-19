@@ -99,7 +99,9 @@ ClientNode::ClientNode()
       diag_agg_throttle_->call(&ClientNode::diagnostics_callback, this, msg);
     });
   plan_sub_ = this->create_subscription<nav_msgs::msg::Path>(
-    "/path_all", 10, std::bind(&ClientNode::path_callback, this, std::placeholders::_1));
+    "/path_all", 10, [this](const nav_msgs::msg::Path::SharedPtr msg) {
+      this->ClientNode::path_callback(msg);
+    });
   battery_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
     battery_topic_, 10, [this](const sensor_msgs::msg::BatteryState::SharedPtr msg) {
       battery_throttle_->call(&ClientNode::battery_callback, this, msg);
@@ -117,8 +119,9 @@ ClientNode::ClientNode()
       image_right_throttle_->call(&ClientNode::image_callback, this, msg, "right");
     });
   event_sub_ = this->create_subscription<cabot_msgs::msg::Log>(
-    "/cabot/activity_Log", 10,
-    std::bind(&ClientNode::activity_log_callback, this, std::placeholders::_1));
+    "/cabot/activity_log", 10, [this](const cabot_msgs::msg::Log::SharedPtr msg) {
+      this->ClientNode::activity_log_callback(msg);
+    });
 }
 
 void ClientNode::send_point(influxdb::Point && point)
@@ -379,7 +382,11 @@ std::string ClientNode::base64_encode(const unsigned char * data, size_t len)
 void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg)
 {
   try {
-    RCLCPP_INFO(this->get_logger(), "%s", msg->text.c_str());
+    RCLCPP_INFO(
+      this->get_logger(),
+      "header_stamp(sec=%ld, nanosec=%ld, frame_id=%s), category=%s, text=%s, memo=%s",
+      msg->header.stamp.sec, msg->header.stamp.nanosec, msg->header.frame_id.c_str(),
+      msg->category.c_str(), msg->text.c_str(), msg->memo.c_str());
     for (std::vector<std::string>::const_iterator robot_name = robot_names_.begin();
       robot_name != robot_names_.end(); robot_name++)
     {

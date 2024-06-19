@@ -23,47 +23,47 @@
 #ifndef CLIENT_NODE_HPP_
 #define CLIENT_NODE_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/parameter.hpp>
-#include <cabot_msgs/msg/pose_log.hpp>
-#include <cabot_msgs/msg/log.hpp>
-#include <geometry_msgs/msg/twist.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <nav_msgs/msg/path.hpp>
-#include <diagnostic_msgs/msg/diagnostic_array.hpp>
-#include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <sensor_msgs/msg/image.hpp>
-#include <sensor_msgs/msg/battery_state.hpp>
 #include <tf2_ros/transform_broadcaster.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <geometry_msgs/msg/quaternion.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <functional>
-#include <thread>
 #include <atomic>
 #include <cmath>
 #include <ctime>
 #include <chrono>
+#include <functional>
+#include <iostream>
 #include <map>
-#include <vector>
+#include <memory>
 #include <string>
 #include <sstream>
+#include <thread>
+#include <utility>
 #include <unordered_map>
-#include <memory>
+#include <vector>
 #include <boost/algorithm/string.hpp>
-
-#include "geoutil.hpp"
-#include "cabot_rclcpp_util.hpp"
-
+#include <cabot_msgs/msg/log.hpp>
+#include <cabot_msgs/msg/pose_log.hpp>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <opencv2/opencv.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/parameter.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/battery_state.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <InfluxDB.h>
 #include <InfluxDBFactory.h>
 #include <InfluxDBBuilder.h>
 #include <Point.h>
+#include "cabot_rclcpp_util.hpp"
+#include "geoutil.hpp"
 
-class Throttle{
+class Throttle
+{
   /*
   A decorator to throttle function calls. The wrapped function can only be called
   once every interval_seconds. Subsequent calls within the interval are ignored.
@@ -71,14 +71,20 @@ class Throttle{
   :param interval_seconds_: The minimum time interval between function calls.
   :return: The wrapper function.
   */
+
 public:
-  Throttle(double interval_seconds_)
-    : interval_(std::chrono::duration<double>(interval_seconds_)), last_called_(std::chrono::steady_clock::now() - std::chrono::duration_cast<std::chrono::seconds>(interval_)){}
+  explicit Throttle(double interval_seconds_)
+  : interval_(std::chrono::duration<double>(interval_seconds_)), last_called_(
+      std::chrono::steady_clock::now() -
+      std::chrono::duration_cast<std::chrono::seconds>(interval_))
+  {
+  }
   // Use a mutable object to allow modification in nested scope
-  template<typename F, typename... Args>
-  void call(F&& f, Args&&... args){
+  template<typename F, typename ... Args>
+  void call(F && f, Args &&... args)
+  {
     std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-    if(now - last_called_ >= interval_){
+    if (now - last_called_ >= interval_) {
       last_called_ = now;
       std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -89,7 +95,8 @@ private:
   std::chrono::steady_clock::time_point last_called_;
 };
 
-class ClientNode : public rclcpp::Node{
+class ClientNode : public rclcpp::Node
+{
 public:
   ClientNode();
 
@@ -133,22 +140,24 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_center_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_right_sub_;
   rclcpp::Subscription<cabot_msgs::msg::Log>::SharedPtr event_sub_;
-  long long last_error_;
+  int64_t last_error_;
 
-  void send_point(influxdb::Point&& point);
-  std::chrono::time_point<std::chrono::system_clock> get_nanosec(const rclcpp::Time& stamp);
-  void euler_from_quaternion(const geometry_msgs::msg::Quaternion& q, double& roll, double& pitch, double& yaw);
+  void send_point(influxdb::Point && point);
+  std::chrono::time_point<std::chrono::system_clock> get_nanosec(const rclcpp::Time & stamp);
+  void euler_from_quaternion(
+    const geometry_msgs::msg::Quaternion & q, double & roll,
+    double & pitch, double & yaw);
   void pose_log_callback(const cabot_msgs::msg::PoseLog::SharedPtr msg);
   void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
   void diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg);
   void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
   void battery_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
-  void image_callback(const sensor_msgs::msg::Image::SharedPtr msg, const std::string& direction);
-  std::string base64_encode(const unsigned char *data, size_t len);
+  void image_callback(const sensor_msgs::msg::Image::SharedPtr msg, const std::string & direction);
+  std::string base64_encode(const unsigned char * data, size_t len);
   void activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg);
 
   int main();
 };
 
-#endif // CLIENT_NODE_HPP_
+#endif  // CLIENT_NODE_HPP_

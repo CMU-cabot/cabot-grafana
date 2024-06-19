@@ -29,58 +29,59 @@
 #ifndef GEOUTIL_HPP_
 #define GEOUTIL_HPP_
 
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/quaternion.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/utils.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 #include <yaml-cpp/yaml.h>
 #include <cmath>
-#include <vector>
-#include <string>
 #include <cstdio>
-#include <iostream>
-
 #include <cassert>
 #include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <proj/coordinateoperation.hpp>
+#include <proj/util.hpp>
 #include <proj/crs.hpp>
 #include <proj/io.hpp>
-#include <proj/util.hpp>
-
 #include "cabot_rclcpp_util.hpp"
 
-class Point{
+class Point
+{
 public:
   double x, y;
   Point(double x, double y);
-  friend std::ostream& operator<<(std::ostream& os, const Point& point);
+  friend std::ostream & operator<<(std::ostream & os, const Point & point);
   std::string toString() const;
 };
 
-class Latlng{
+class Latlng
+{
 public:
   double lat, lng;
   Latlng(double lat, double lng);
-  friend std::ostream& operator<<(std::ostream& os, const Latlng& latlng);
+  friend std::ostream & operator<<(std::ostream & os, const Latlng & latlng);
   std::string toString() const;
 };
 
-class Anchor : public Latlng{
+class Anchor : public Latlng
+{
 public:
-  double rotate = 0.0 ;
-  Anchor(double lat = 0.0, double lng = 0.0, double rotate = 0.0);
-  friend std::ostream& operator<<(std::ostream& os, const Anchor& anchor);
+  double rotate = 0.0;
+  explicit Anchor(double lat = 0.0, double lng = 0.0, double rotate = 0.0);
+  friend std::ostream & operator<<(std::ostream & os, const Anchor & anchor);
   std::string toString() const;
 };
 
-Point latlng2mercator(const Latlng& latlng);
-Latlng mercator2latlng(const Point& mercator);
-double get_point_resolution(const Anchor& anchor);
-Point xy2mercator(const Point& src_xy, const Anchor& anchor);
-Latlng local2global(const Point& xy, Anchor& anchor);
-Anchor get_anchor(const std::string& anchor_file);
+Point latlng2mercator(const Latlng & latlng);
+Latlng mercator2latlng(const Point & mercator);
+double get_point_resolution(const Anchor & anchor);
+Point xy2mercator(const Point & src_xy, const Anchor & anchor);
+Latlng local2global(const Point & xy, Anchor & anchor);
+Anchor get_anchor(const std::string & anchor_file);
 
 #endif  // GEOUTIL_HPP_

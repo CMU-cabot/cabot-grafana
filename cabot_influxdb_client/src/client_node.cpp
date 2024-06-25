@@ -336,11 +336,10 @@ void ClientNode::image_callback(
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
   }
-  cv::Mat cv_image = cv_ptr->image;
-  std::vector<uchar> buf;
-  cv::imencode(".jpg", cv_image, buf);
-  std::string jpg_as_text = base64_encode(buf.data(), buf.size());
   try {
+    std::vector<uchar> buf;
+    cv::imencode(".jpg", cv_ptr->image, buf);
+    std::string jpg_as_text = base64_encode(buf);
     influxdb::Point point = influxdb::Point{"image"}
     .addField("data", jpg_as_text)
     .addTag("format", "jpeg")
@@ -353,15 +352,15 @@ void ClientNode::image_callback(
   }
 }
 
-std::string ClientNode::base64_encode(const unsigned char * data, size_t len)
+std::string ClientNode::base64_encode(const std::vector<uchar>& data)
 {
   static const char encode_table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   std::string encoded;
-  encoded.reserve(((len + 2) / 3) * 4);
+  encoded.reserve(((data.size() + 2) / 3) * 4);
   unsigned int temp = 0;
   int bits = 0;
-  for (size_t i = 0; i < len; ++i) {
+  for (size_t i = 0; i < data.size(); ++i) {
     temp = (temp << 8) + data[i];
     bits += 8;
     while (bits >= 6) {
@@ -384,7 +383,7 @@ void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg
   try {
     RCLCPP_INFO(
       this->get_logger(),
-      "header_stamp(sec=%ld, nanosec=%ld, frame_id=%s), category=%s, text=%s, memo=%s",
+      "header_stamp(sec=%d, nanosec=%d, frame_id=%s), category=%s, text=%s, memo=%s",
       msg->header.stamp.sec, msg->header.stamp.nanosec, msg->header.frame_id.c_str(),
       msg->category.c_str(), msg->text.c_str(), msg->memo.c_str());
     for (std::vector<std::string>::const_iterator robot_name = robot_names_.begin();

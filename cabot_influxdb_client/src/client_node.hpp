@@ -154,7 +154,7 @@ private:
   void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
   void battery_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
   void image_callback(const sensor_msgs::msg::Image::SharedPtr msg, const std::string & direction);
-  std::string base64_encode(const unsigned char * data, size_t len);
+  std::string base64_encode(const std::vector<uchar>& data);
   void activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg);
 
   int main();

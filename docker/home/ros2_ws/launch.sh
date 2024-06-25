@@ -65,7 +65,7 @@ function snore()
 
 source install/setup.bash
 
-ros2 launch cabot_influxdb_client launch.py &
+ros2 launch cabot_influxdb_client launch_client.yaml &
 pids+=($!)
 termpids+=($!)
 

@@ -102,7 +102,6 @@ public:
 
 private:
   std::string robot_name_;
-  std::vector<std::string> robot_names_;
   std::string host_;
   std::string token_;
   std::string org_;

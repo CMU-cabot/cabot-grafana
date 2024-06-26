@@ -8,13 +8,13 @@ launch:
       default: $(env CABOT_INFLUXDB_BATTERY_TOPIC "/cabot/battery")
   - arg:
       name: image_left_topic
-      default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "/camera/color/image_raw")
+      default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "")
   - arg:
       name: image_center_topic
       default: $(env CABOT_INFLUXDB_IMAGE_CENTER_TOPIC "/camera/color/image_raw")
   - arg:
       name: image_right_topic
-      default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "/camera/color/image_raw")
+      default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "")
   - arg:
       name: pose_interval
       default: $(env CABOT_INFLUXDB_POSE_INTERVAL 1.0)

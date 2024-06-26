@@ -93,18 +93,22 @@ ClientNode::ClientNode()
     battery_topic_, 10, [this](const sensor_msgs::msg::BatteryState::SharedPtr msg) {
       battery_throttle_->call(&ClientNode::battery_callback, this, msg);
     });
-  image_left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    image_left_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
-      image_left_throttle_->call(&ClientNode::image_callback, this, msg, "left");
-    });
+  if(!image_left_topic_.empty()){
+    image_left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+      image_left_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
+        image_left_throttle_->call(&ClientNode::image_callback, this, msg, "left");
+      });
+  }
   image_center_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     image_center_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
       image_center_throttle_->call(&ClientNode::image_callback, this, msg, "center");
     });
-  image_right_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    image_right_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
-      image_right_throttle_->call(&ClientNode::image_callback, this, msg, "right");
-    });
+  if(!image_right_topic_.empty()){
+    image_right_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+      image_right_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
+        image_right_throttle_->call(&ClientNode::image_callback, this, msg, "right");
+      });
+  }
   event_sub_ = this->create_subscription<cabot_msgs::msg::Log>(
     "/cabot/activity_log", 10, [this](const cabot_msgs::msg::Log::SharedPtr msg) {
       this->ClientNode::activity_log_callback(msg);

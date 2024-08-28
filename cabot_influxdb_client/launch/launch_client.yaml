@@ -44,7 +44,7 @@ launch:
       default: $(env CABOT_INFLUXDB_ORG cabot)
   - arg:
       name: bucket
-      default: $(env CABOT_INFLUXDB_BUKET cabot)
+      default: $(env CABOT_INFLUXDB_BUCKET cabot)
   - arg:
       name: anchor_file
       default: /home/developer/ros2_ws/src/anchor_file.yaml

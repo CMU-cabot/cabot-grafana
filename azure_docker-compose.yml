@@ -4,10 +4,5 @@ services:
     build:
       context: docker/azure
     ports:
-      - 80:3000
-    volumes:
-      - ./docker/home:/home/developer
-      - ./grafana:/home/developer/src/grafana
-    command:
-      - /launch.sh
-      - launch
+      - 3000:3000
+    command: ["/home/developer/src/grafana/bin/linux-amd64/grafana", "server"]

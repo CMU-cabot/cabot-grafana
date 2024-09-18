@@ -48,6 +48,7 @@ install_node() {
         wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
         source $HOME/.nvm/nvm.sh
         nvm install 20
+        nvm --version
     fi
 }
 
@@ -56,24 +57,32 @@ build_project() {
     echo "Building the project..."
     npm install --global yarn
     yarn install --immutable
+    #cd /home/developer/src
+    #wget https://github.com/CMU-cabot/grafana/archive/refs/heads/main.zip
+    #unzip -q main.zip
+    #echo "grafana-main -> grafana..."
+    # rm -rf grafana
+    # mv -f grafana-main grafana
+    #mv grafana-main/* grafana
     cd /home/developer/src/grafana
+    echo "make build ..."
     make build
+    echo "grafana cli install plugin ..."
     ./bin/linux-amd64/grafana cli plugins install volkovlabs-image-panel
+    #mv bin $HOME/src/grafana
+    #cd ..
+    #rm -rf grafana-main
 }
 
 # Main script logic
 case "$1" in
     build)
-        install_go
-        install_node
+        #install_go
+        #install_node
         build_project
         ;;
-    launch)
+    *)
         cd /home/developer/src/grafana
         bin/grafana server
-        ;;
-    *)
-        echo "Usage: $0 {build|launch}"
-        exit 1
         ;;
 esac

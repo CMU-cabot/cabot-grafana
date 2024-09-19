@@ -1,8 +1,18 @@
+version: '3'
 services:
-
   azure:
     build:
       context: docker/azure
     ports:
       - 3000:3000
-    command: ["/home/developer/src/grafana/bin/linux-amd64/grafana", "server"]
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    entrypoint: ["/entrypoint.sh"]
+    command: ["grafana", "server", "-homepath", "/usr/share/grafana", "-config", "/etc/grafana/grafana.ini"]
+
+volumes:
+  grafana-storage:

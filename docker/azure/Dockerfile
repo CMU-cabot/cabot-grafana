@@ -25,30 +25,33 @@ RUN useradd -m $USERNAME && \
     usermod --uid $UID $USERNAME && \
     groupmod --gid $UID $USERNAME
 
+USER $USERNAME
 ENV HOME=/home/$USERNAME
 
-# Install Go
-RUN wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
-    rm go1.21.0.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go1.21.8.linux-amd64.tar.gz -O /tmp/go1.21.8.linux-amd64.tar.gz && \
+    mkdir -p $HOME/go && \
+    tar -C $HOME/go -xzf /tmp/go1.21.8.linux-amd64.tar.gz && \
+    rm /tmp/go1.21.8.linux-amd64.tar.gz
 
-ENV GOROOT=/usr/local/go
-ENV GOPATH=/home/$USERNAME/go
+ENV GOROOT=$HOME/go/go
+ENV GOPATH=$HOME/go_projects
 ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
 RUN mkdir -p $GOPATH && chown -R $USERNAME:$USERNAME $GOPATH
 
-# Install Node.js and corepack
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g corepack && \
-    corepack enable
+RUN go install github.com/evilmartians/lefthook@latest
 
-USER $USERNAME
+ENV NODE_VERSION 20.17.0
+ENV NVM_DIR /home/developer/.nvm
 
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
+    . $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm alias default $NODE_VERSION && \
+    nvm use default
 
-# Download and set up Grafana
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
 RUN wget -O /tmp/grafana.zip https://github.com/CMU-cabot/grafana/archive/refs/heads/main.zip && \
     unzip /tmp/grafana.zip -d /tmp && \
     mkdir -p $HOME/src && \
@@ -57,19 +60,13 @@ RUN wget -O /tmp/grafana.zip https://github.com/CMU-cabot/grafana/archive/refs/h
 
 WORKDIR $HOME/src/grafana
 
-# Build Grafana
-RUN yarn install --immutable && \
-    make build -j1 VERBOSE=1 && \
-    ./bin/linux-amd64/grafana cli plugins install volkovlabs-image-panel
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
-# Check the contents of the build stage
-RUN echo "Build stage: Content of $HOME/src/grafana:" && \
-    ls -la $HOME/src/grafana && \
-    echo "Build stage: Content of $HOME/src/grafana/conf:" && \
-    ls -la $HOME/src/grafana/conf && \
-    echo "Build stage: Tree structure of $HOME/src/grafana:" && \
-    find $HOME/src/grafana -type d
+RUN npm install --global yarn && \
+    yarn install --immutable
 
+RUN make build
+RUN ./bin/linux-amd64/grafana cli plugins install volkovlabs-image-panel
 
 # Runtime stage
 FROM ubuntu:22.04
@@ -77,28 +74,16 @@ FROM ubuntu:22.04
 # Copy Grafana files
 COPY --from=builder /home/developer/src/grafana/bin/linux-amd64/grafana /usr/local/bin/grafana
 COPY --from=builder /home/developer/src/grafana/conf /usr/share/grafana/conf
-RUN echo "After copying conf:" && \
-    ls -la /usr/share/grafana && \
-    ls -laR /usr/share/grafana/conf
 
 # Create necessary directories and copy conf
-RUN mkdir -p /etc/grafana /var/lib/grafana /var/log/grafana && \
-    cp -r /usr/share/grafana/conf/* /etc/grafana/ && \
-    echo "After creating directories and copying conf:" && \
-    ls -la /etc/grafana && \
-    ls -la /var/lib/grafana && \
-    ls -la /var/log/grafana
+RUN mkdir -p /etc/grafana /var/lib/grafana/data /var/log/grafana && \
+    cp -r /usr/share/grafana/conf/* /etc/grafana/
 
 COPY --from=builder /home/developer/src/grafana/public /usr/share/grafana/public
-COPY --from=builder /home/developer/src/grafana/plugins-bundled /var/lib/grafana/plugins
+COPY --from=builder /home/developer/src/grafana/data/plugins /var/lib/grafana/plugins
 
 # Set permissions
-RUN chown -R nobody:nogroup /etc/grafana /var/lib/grafana /var/log/grafana /usr/share/grafana && \
-    echo "After setting permissions:" && \
-    ls -la /etc/grafana && \
-    ls -la /var/lib/grafana && \
-    ls -la /var/log/grafana && \
-    ls -la /usr/share/grafana
+RUN chown -R nobody:nogroup /etc/grafana /var/lib/grafana /var/log/grafana /usr/share/grafana
 
 # Set up entrypoint script
 COPY entrypoint.sh /entrypoint.sh
@@ -111,7 +96,6 @@ RUN echo "Final state:" && \
     ls -la /var/lib/grafana/plugins && \
     ls -la /etc/grafana
 
-
 # Copy default configuration
 RUN cp /etc/grafana/defaults.ini /etc/grafana/grafana.ini
 
@@ -123,7 +107,7 @@ WORKDIR /usr/share/grafana
 
 ENV PATH="/usr/local/bin:${PATH}" \
     GF_PATHS_CONFIG="/etc/grafana/grafana.ini" \
-    GF_PATHS_DATA="/var/lib/grafana" \
+    GF_PATHS_DATA="/var/lib/grafana/data" \
     GF_PATHS_HOME="/usr/share/grafana" \
     GF_PATHS_LOGS="/var/log/grafana" \
     GF_PATHS_PLUGINS="/var/lib/grafana/plugins" \

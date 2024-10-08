@@ -23,7 +23,7 @@ RUN apt install -y \
 	 libboost-system1.74-dev
 
 RUN cd /tmp && \
-	git clone https://github.com/libcpr/cpr.git && \
+	git clone https://github.com/libcpr/cpr.git -b 1.10.5 && \
 	cd cpr && mkdir build && cd build && \
 	cmake .. -DCPR_USE_SYSTEM_CURL=ON && \
 	cmake --build . --parallel && \

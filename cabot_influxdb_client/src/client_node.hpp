@@ -55,10 +55,10 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <InfluxDB.h>
-#include <InfluxDBFactory.h>
-#include <InfluxDBBuilder.h>
-#include <Point.h>
+#include <InfluxDB/InfluxDB.h>
+#include <InfluxDB/InfluxDBFactory.h>
+#include <InfluxDB/InfluxDBBuilder.h>
+#include <InfluxDB/Point.h>
 #include "cabot_rclcpp_util.hpp"
 #include "geoutil.hpp"
 

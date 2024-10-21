@@ -29,6 +29,7 @@ from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
 from sensor_msgs.msg import Image, BatteryState
+from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
 import base64
@@ -105,6 +106,11 @@ class ClientNode(Node):
         odom_interval = self.declare_parameter("odom_interval", 0.2).value
         diag_agg_interval = self.declare_parameter("diag_agg_interval", 1.0).value
         battery_interval = self.declare_parameter("battery_interval", 1.0).value
+        temperature_interval1 = self.declare_parameter("temperature_interval1", 1.0).value
+        temperature_interval2 = self.declare_parameter("temperature_interval2", 1.0).value
+        temperature_interval3 = self.declare_parameter("temperature_interval3", 1.0).value
+        temperature_interval4 = self.declare_parameter("temperature_interval4", 1.0).value
+        temperature_interval5 = self.declare_parameter("temperature_interval5", 1.0).value
         image_interval = self.declare_parameter("image_interval", 5.0).value
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
@@ -116,7 +122,13 @@ class ClientNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
-        self.battery_sub = self.create_subscription(BatteryState, battery_topic, self.battery_callback(battery_interval), 10)
+        self.battery_sub = self.create_subscription(BatteryState, '/battery_state', self.battery_callback(battery_interval), 10)
+        self.temperature_log_sub1 = self.create_subscription(Temperature, '/cabot/temperature1', self.temp_log_callback1(temperature_interval1), 10)
+        self.temperature_log_sub2 = self.create_subscription(Temperature, '/cabot/temperature2', self.temp_log_callback2(temperature_interval2), 10)
+        self.temperature_log_sub3 = self.create_subscription(Temperature, '/cabot/temperature3', self.temp_log_callback3(temperature_interval3), 10)
+        self.temperature_log_sub4 = self.create_subscription(Temperature, '/cabot/temperature4', self.temp_log_callback4(temperature_interval4), 10)
+        self.temperature_log_sub5 = self.create_subscription(Temperature, '/cabot/temperature5', self.temp_log_callback5(temperature_interval5), 10)
+        
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
@@ -263,6 +275,62 @@ class ClientNode(Node):
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)
+                
+    def temp_log_callback1(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature1") \
+                    .field("value", msg.temperaure) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
+        
+    def temp_log_callback2(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature2") \
+                    .field("value", msg.temperaure) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
+        
+    def temp_log_callback3(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature3") \
+                    .field("value", msg.temperaure) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
+
+    def temp_log_callback4(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature4") \
+                    .field("value", msg.temperaure) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
+
+    def temp_log_callback5(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature5") \
+                    .field("value", msg.temperaure) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
+
 
 def main(args=None):
     rclpy.init(args=args)

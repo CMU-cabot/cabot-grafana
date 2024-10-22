@@ -130,8 +130,8 @@ class ClientNode(Node):
         self.temperature_log_sub3 = self.create_subscription(Temperature, '/cabot/temperature3', self.temp_log_callback3(temperature_interval3), 10)
         self.temperature_log_sub4 = self.create_subscription(Temperature, '/cabot/temperature4', self.temp_log_callback4(temperature_interval4), 10)
         self.temperature_log_sub5 = self.create_subscription(Temperature, '/cabot/temperature5', self.temp_log_callback5(temperature_interval5), 10)
-        
         self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback_bme(temperature_interval_bme), 10)
+
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
@@ -280,7 +280,7 @@ class ClientNode(Node):
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)
-                
+
     def temp_log_callback1(self, interval):
         @throttle(interval)
         def inner_func(msg):
@@ -294,7 +294,7 @@ class ClientNode(Node):
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
         return inner_func
-        
+
     def temp_log_callback2(self, interval):
         @throttle(interval)
         def inner_func(msg):
@@ -308,7 +308,7 @@ class ClientNode(Node):
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
         return inner_func
-        
+
     def temp_log_callback3(self, interval):
         @throttle(interval)
         def inner_func(msg):

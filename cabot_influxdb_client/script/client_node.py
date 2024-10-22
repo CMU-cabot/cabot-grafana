@@ -285,6 +285,9 @@ class ClientNode(Node):
             for robot_name in self.robot_names:
                 point = Point("temperature1") \
                     .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "1") \
+                    .tag("position_detail", "Exhaust") \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
@@ -296,6 +299,9 @@ class ClientNode(Node):
             for robot_name in self.robot_names:
                 point = Point("temperature2") \
                     .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "2") \
+                    .tag("position_detail", "Behind LiDAR") \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
@@ -307,6 +313,9 @@ class ClientNode(Node):
             for robot_name in self.robot_names:
                 point = Point("temperature3") \
                     .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "3") \
+                    .tag("position_detail", "In the center of the three FRAMOSes") \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
@@ -318,6 +327,9 @@ class ClientNode(Node):
             for robot_name in self.robot_names:
                 point = Point("temperature4") \
                     .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "4") \
+                    .tag("position_detail", "Center of the suit case") \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
@@ -329,6 +341,9 @@ class ClientNode(Node):
             for robot_name in self.robot_names:
                 point = Point("temperature5") \
                     .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "5") \
+                    .tag("position_detail", "Lower intake") \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)

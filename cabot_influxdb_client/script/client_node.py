@@ -283,7 +283,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
-                point = Point("temperature1") \
+                point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
                     .tag("position", "1") \
@@ -297,7 +297,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
-                point = Point("temperature2") \
+                point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
                     .tag("position", "2") \
@@ -311,7 +311,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
-                point = Point("temperature3") \
+                point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
                     .tag("position", "3") \
@@ -325,7 +325,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
-                point = Point("temperature4") \
+                point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
                     .tag("position", "4") \
@@ -339,7 +339,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
-                point = Point("temperature5") \
+                point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
                     .tag("position", "5") \

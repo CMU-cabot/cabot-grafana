@@ -112,6 +112,7 @@ class ClientNode(Node):
         temperature_interval3 = self.declare_parameter("temperature_interval3", 1.0).value
         temperature_interval4 = self.declare_parameter("temperature_interval4", 1.0).value
         temperature_interval5 = self.declare_parameter("temperature_interval5", 1.0).value
+        temperature_interval_bme = self.declare_parameter("temperature_interval_bme", 1.0).value
         image_interval = self.declare_parameter("image_interval", 5.0).value
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
@@ -130,6 +131,7 @@ class ClientNode(Node):
         self.temperature_log_sub4 = self.create_subscription(Temperature, '/cabot/temperature4', self.temp_log_callback4(temperature_interval4), 10)
         self.temperature_log_sub5 = self.create_subscription(Temperature, '/cabot/temperature5', self.temp_log_callback5(temperature_interval5), 10)
         
+        self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback_bme(temperature_interval_bme), 10)
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
@@ -349,6 +351,19 @@ class ClientNode(Node):
                 self.send_point(point)
         return inner_func
 
+    def temp_log_callback_bme(self, interval):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature") \
+                    .field("value", msg.temperaure) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", "bme") \
+                    .tag("position_detail", "Upper intake") \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
 
 def main(args=None):
     rclpy.init(args=args)

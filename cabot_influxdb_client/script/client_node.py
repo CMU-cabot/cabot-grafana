@@ -28,7 +28,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
-from sensor_msgs.msg import Image, BatteryState
+from sensor_msgs.msg import Image
+from power_controller_msgs.msg import BatteryArray
 from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
@@ -122,7 +123,7 @@ class ClientNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
-        self.battery_sub = self.create_subscription(BatteryState, '/battery_state', self.battery_callback(battery_interval), 10)
+        self.battery_sub = self.create_subscription(BatteryArray, '/battery_state', self.battery_callback(battery_interval), 10)
         self.temperature_log_sub1 = self.create_subscription(Temperature, '/cabot/temperature1', self.temp_log_callback1(temperature_interval1), 10)
         self.temperature_log_sub2 = self.create_subscription(Temperature, '/cabot/temperature2', self.temp_log_callback2(temperature_interval2), 10)
         self.temperature_log_sub3 = self.create_subscription(Temperature, '/cabot/temperature3', self.temp_log_callback3(temperature_interval3), 10)
@@ -237,8 +238,10 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
+                battery_percentages = [battery.percentage for battery in msg.batteryarray]
+                battery_average = sum(battery_percentages) / len(battery_percentages)
                 point = Point("battery") \
-                    .field("percentage", msg.percentage * 100.0) \
+                    .field("percentage", battery_average * 100.0) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)

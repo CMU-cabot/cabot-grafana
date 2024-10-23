@@ -125,12 +125,21 @@ class ClientNode(Node):
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
         self.battery_sub = self.create_subscription(BatteryArray, '/battery_state', self.battery_callback(battery_interval), 10)
-        self.temperature_log_sub1 = self.create_subscription(Temperature, '/cabot/temperature1', self.temp_log_callback1(temperature_interval1), 10)
-        self.temperature_log_sub2 = self.create_subscription(Temperature, '/cabot/temperature2', self.temp_log_callback2(temperature_interval2), 10)
-        self.temperature_log_sub3 = self.create_subscription(Temperature, '/cabot/temperature3', self.temp_log_callback3(temperature_interval3), 10)
-        self.temperature_log_sub4 = self.create_subscription(Temperature, '/cabot/temperature4', self.temp_log_callback4(temperature_interval4), 10)
-        self.temperature_log_sub5 = self.create_subscription(Temperature, '/cabot/temperature5', self.temp_log_callback5(temperature_interval5), 10)
-        self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback_bme(temperature_interval_bme), 10)
+
+        thermometer_position_map = {
+                '1'  : "Exhaust",
+                '2'  : "Behind LiDAR",
+                '3'  : "In the center of the three FRAMOSes",
+                '4'  : "Center of the suit case",
+                '5'  : "Lower intake",
+                'bme': "Upper intake"
+                }
+        self.temperature_log_sub1 = self.create_subscription(Temperature,    '/cabot/temperature1',    self.temp_log_callback(temperature_interval1, '1', thermometer_position_map['1']), 10)
+        self.temperature_log_sub2 = self.create_subscription(Temperature,    '/cabot/temperature2',    self.temp_log_callback(temperature_interval2, '2', thermometer_position_map['2']), 10)
+        self.temperature_log_sub3 = self.create_subscription(Temperature,    '/cabot/temperature3',    self.temp_log_callback(temperature_interval3, '3', thermometer_position_map['3']), 10)
+        self.temperature_log_sub4 = self.create_subscription(Temperature,    '/cabot/temperature4',    self.temp_log_callback(temperature_interval4, '4', thermometer_position_map['4']), 10)
+        self.temperature_log_sub5 = self.create_subscription(Temperature,    '/cabot/temperature5',    self.temp_log_callback(temperature_interval5, '5', thermometer_position_map['5']), 10)
+        self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback(temperature_interval_bme, 'bme', thermometer_position_map['bme']), 10)
 
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
@@ -281,85 +290,15 @@ class ClientNode(Node):
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)
 
-    def temp_log_callback1(self, interval):
+    def temp_log_callback(self, interval, position, position_description):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
                 point = Point("temperature") \
                     .field("value", msg.temperaure) \
                     .tag("robot_name", robot_name) \
-                    .tag("position", "1") \
-                    .tag("position_detail", "Exhaust") \
-                    .tag("unit", "celsius") \
-                    .time(get_nanosec(), WritePrecision.NS)
-                self.send_point(point)
-        return inner_func
-
-    def temp_log_callback2(self, interval):
-        @throttle(interval)
-        def inner_func(msg):
-            for robot_name in self.robot_names:
-                point = Point("temperature") \
-                    .field("value", msg.temperaure) \
-                    .tag("robot_name", robot_name) \
-                    .tag("position", "2") \
-                    .tag("position_detail", "Behind LiDAR") \
-                    .tag("unit", "celsius") \
-                    .time(get_nanosec(), WritePrecision.NS)
-                self.send_point(point)
-        return inner_func
-
-    def temp_log_callback3(self, interval):
-        @throttle(interval)
-        def inner_func(msg):
-            for robot_name in self.robot_names:
-                point = Point("temperature") \
-                    .field("value", msg.temperaure) \
-                    .tag("robot_name", robot_name) \
-                    .tag("position", "3") \
-                    .tag("position_detail", "In the center of the three FRAMOSes") \
-                    .tag("unit", "celsius") \
-                    .time(get_nanosec(), WritePrecision.NS)
-                self.send_point(point)
-        return inner_func
-
-    def temp_log_callback4(self, interval):
-        @throttle(interval)
-        def inner_func(msg):
-            for robot_name in self.robot_names:
-                point = Point("temperature") \
-                    .field("value", msg.temperaure) \
-                    .tag("robot_name", robot_name) \
-                    .tag("position", "4") \
-                    .tag("position_detail", "Center of the suit case") \
-                    .tag("unit", "celsius") \
-                    .time(get_nanosec(), WritePrecision.NS)
-                self.send_point(point)
-        return inner_func
-
-    def temp_log_callback5(self, interval):
-        @throttle(interval)
-        def inner_func(msg):
-            for robot_name in self.robot_names:
-                point = Point("temperature") \
-                    .field("value", msg.temperaure) \
-                    .tag("robot_name", robot_name) \
-                    .tag("position", "5") \
-                    .tag("position_detail", "Lower intake") \
-                    .tag("unit", "celsius") \
-                    .time(get_nanosec(), WritePrecision.NS)
-                self.send_point(point)
-        return inner_func
-
-    def temp_log_callback_bme(self, interval):
-        @throttle(interval)
-        def inner_func(msg):
-            for robot_name in self.robot_names:
-                point = Point("temperature") \
-                    .field("value", msg.temperaure) \
-                    .tag("robot_name", robot_name) \
-                    .tag("position", "bme") \
-                    .tag("position_detail", "Upper intake") \
+                    .tag("position", position) \
+                    .tag("position_description",position_description) \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)

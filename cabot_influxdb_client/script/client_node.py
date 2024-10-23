@@ -295,7 +295,7 @@ class ClientNode(Node):
         def inner_func(msg):
             for robot_name in self.robot_names:
                 point = Point("temperature") \
-                    .field("value", msg.temperaure) \
+                    .field("value", msg.temperature) \
                     .tag("robot_name", robot_name) \
                     .tag("position", position) \
                     .tag("position_description",position_description) \

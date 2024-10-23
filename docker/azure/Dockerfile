@@ -71,6 +71,14 @@ RUN ./bin/linux-amd64/grafana cli plugins install volkovlabs-image-panel
 # Runtime stage
 FROM ubuntu:22.04
 
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -o /etc/ssl/certs/DigiCertGlobalRootCA.crt.pem https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem
+
 # Copy Grafana files
 COPY --from=builder /home/developer/src/grafana/bin/linux-amd64/grafana /usr/local/bin/grafana
 COPY --from=builder /home/developer/src/grafana/conf /usr/share/grafana/conf

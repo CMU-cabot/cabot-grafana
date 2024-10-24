@@ -28,7 +28,9 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
-from sensor_msgs.msg import Image, BatteryState
+from sensor_msgs.msg import Image
+from power_controller_msgs.msg import BatteryArray
+from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
 import base64
@@ -105,6 +107,12 @@ class ClientNode(Node):
         odom_interval = self.declare_parameter("odom_interval", 0.2).value
         diag_agg_interval = self.declare_parameter("diag_agg_interval", 1.0).value
         battery_interval = self.declare_parameter("battery_interval", 1.0).value
+        temperature_interval1 = self.declare_parameter("temperature_interval1", 1.0).value
+        temperature_interval2 = self.declare_parameter("temperature_interval2", 1.0).value
+        temperature_interval3 = self.declare_parameter("temperature_interval3", 1.0).value
+        temperature_interval4 = self.declare_parameter("temperature_interval4", 1.0).value
+        temperature_interval5 = self.declare_parameter("temperature_interval5", 1.0).value
+        temperature_interval_bme = self.declare_parameter("temperature_interval_bme", 1.0).value
         image_interval = self.declare_parameter("image_interval", 5.0).value
 
         self.client = InfluxDBClient(url=self.host, token=self.token, org=self.org)
@@ -116,7 +124,23 @@ class ClientNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
         self.diag_agg_sub = self.create_subscription(DiagnosticArray, '/diagnostics_agg', self.diagnostics_callback(diag_agg_interval), 10)
         self.plan_sub = self.create_subscription(Path, '/path_all', self.path_callback, 10)
-        self.battery_sub = self.create_subscription(BatteryState, battery_topic, self.battery_callback(battery_interval), 10)
+        self.battery_sub = self.create_subscription(BatteryArray, '/battery_state', self.battery_callback(battery_interval), 10)
+
+        thermometer_position_map = {
+                '1'  : "Exhaust",
+                '2'  : "Behind LiDAR",
+                '3'  : "In the center of the three FRAMOSes",
+                '4'  : "Center of the suit case",
+                '5'  : "Lower intake",
+                'bme': "Upper intake"
+                }
+        self.temperature_log_sub1 = self.create_subscription(Temperature,    '/cabot/temperature1',    self.temp_log_callback(temperature_interval1, '1', thermometer_position_map['1']), 10)
+        self.temperature_log_sub2 = self.create_subscription(Temperature,    '/cabot/temperature2',    self.temp_log_callback(temperature_interval2, '2', thermometer_position_map['2']), 10)
+        self.temperature_log_sub3 = self.create_subscription(Temperature,    '/cabot/temperature3',    self.temp_log_callback(temperature_interval3, '3', thermometer_position_map['3']), 10)
+        self.temperature_log_sub4 = self.create_subscription(Temperature,    '/cabot/temperature4',    self.temp_log_callback(temperature_interval4, '4', thermometer_position_map['4']), 10)
+        self.temperature_log_sub5 = self.create_subscription(Temperature,    '/cabot/temperature5',    self.temp_log_callback(temperature_interval5, '5', thermometer_position_map['5']), 10)
+        self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback(temperature_interval_bme, 'bme', thermometer_position_map['bme']), 10)
+
         if image_left_topic:
             self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
@@ -225,8 +249,10 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             for robot_name in self.robot_names:
+                battery_percentages = [battery.percentage for battery in msg.batteryarray]
+                battery_average = sum(battery_percentages) / len(battery_percentages)
                 point = Point("battery") \
-                    .field("percentage", msg.percentage * 100.0) \
+                    .field("percentage", battery_average * 100.0) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)
@@ -263,6 +289,20 @@ class ClientNode(Node):
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(msg.header.stamp), WritePrecision.NS)
                 self.send_point(point)
+
+    def temp_log_callback(self, interval, position, position_description):
+        @throttle(interval)
+        def inner_func(msg):
+            for robot_name in self.robot_names:
+                point = Point("temperature") \
+                    .field("value", msg.temperature) \
+                    .tag("robot_name", robot_name) \
+                    .tag("position", position) \
+                    .tag("position_description",position_description) \
+                    .tag("unit", "celsius") \
+                    .time(get_nanosec(), WritePrecision.NS)
+                self.send_point(point)
+        return inner_func
 
 def main(args=None):
     rclpy.init(args=args)

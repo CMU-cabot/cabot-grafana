@@ -9,3 +9,7 @@ repositories:
     url: https://github.com/CMU-cabot/grafana.git
     version: main
 
+  cabot-drivers:
+    type: git
+    url: https://github.com/CMU-cabot/cabot-drivers.git
+    version: daisukes/k3-cabot-test

@@ -11,6 +11,7 @@
 
   <depend>rclpy</depend>
   <depend>cabot_msgs</depend>
+  <depend>power_controller_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

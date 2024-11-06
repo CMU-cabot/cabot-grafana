@@ -259,6 +259,8 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            if direction == "left":
+                cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             jpg_as_text = base64.b64encode(buffer).decode()
             for robot_name in self.robot_names:

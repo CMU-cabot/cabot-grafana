@@ -93,6 +93,8 @@ class ClientNode(Node):
         image_center_topic = self.declare_parameter("image_center_topic", "").value
         image_right_topic = self.declare_parameter("image_right_topic", "").value
         self.get_logger().info(F"image_topics is {image_left_topic}, {image_center_topic}, {image_right_topic}")
+        self.rotate_image = self.declare_parameter("image_rotate", "").value
+        self.rotate_images = self.rotate_image.split(",")
         self.anchor = None
         self.get_logger().info(F"Anchor file is {anchor_file}")
         if anchor_file is not None:
@@ -259,7 +261,7 @@ class ClientNode(Node):
         @throttle(interval)
         def inner_func(msg):
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            if direction == "left":
+            if direction in self.rotate_images:
                 cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             jpg_as_text = base64.b64encode(buffer).decode()

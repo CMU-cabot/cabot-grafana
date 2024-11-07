@@ -16,6 +16,9 @@ launch:
       name: image_right_topic
       default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "")
   - arg:
+      name: image_rotate
+      default: $(env CABOT_INFLUXDB_IMAGE_ROTATE "")
+  - arg:
       name: pose_interval
       default: $(env CABOT_INFLUXDB_POSE_INTERVAL 1.0)
   - arg:
@@ -69,6 +72,9 @@ launch:
         -
           name: image_right_topic
           value: $(var image_right_topic)
+        -
+          name: image_rotate
+          value: $(var image_rotate)
         -
           name: pose_interval
           value: $(var pose_interval)

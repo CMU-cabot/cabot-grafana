@@ -71,6 +71,17 @@ def get_nanosec(stamp=None):
     return int(stamp.sec * 1e9 + stamp.nanosec)
 
 
+def resize_with_aspect_ratio_cv2(image, target_size):
+    original_height, original_width = image.shape[:2]
+    if original_width > original_height:
+        new_width = target_size
+        new_height = int((target_size / original_width) * original_height)
+    else:
+        new_height = target_size
+        new_width = int((target_size / original_height) * original_width)
+    resized_image =cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    return resized_image
+
 class ClientNode(Node):
     def __init__(self):
         super().__init__("client_node")
@@ -263,6 +274,7 @@ class ClientNode(Node):
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             if direction in self.rotate_images:
                 cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
+            cv_image = resize_with_aspect_ratio_cv2(cv_image, 512)
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             jpg_as_text = base64.b64encode(buffer).decode()
             for robot_name in self.robot_names:

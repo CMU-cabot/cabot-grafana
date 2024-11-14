@@ -1,0 +1,16 @@
+[Unit]
+Description = CaBot Grafana Client
+
+[Service]
+ExecStart = /opt/cabot-grafana/launch.sh
+Restart = always
+RestartSec=1s
+StartLimitBurst=5
+StartLimitInterval=10s
+
+WorkingDirectory = /opt/cabot-grafana
+Type = simple
+
+[Install]
+WantedBy = default.target
+

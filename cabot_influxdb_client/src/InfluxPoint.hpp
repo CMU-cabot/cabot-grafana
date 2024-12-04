@@ -8,6 +8,7 @@
 #include <chrono>
 #include <optional>
 #include <iomanip>
+#include <charconv>
 
 class InfluxPoint {
 public:
@@ -20,6 +21,7 @@ public:
   InfluxPoint& setTimestamp(std::chrono::time_point<std::chrono::system_clock> timestamp);
   
   std::string toLineProtocol() const;
+  std::string formatFloatingPoint(double value, int precision = 10) const;
 
 private:
   std::string measurement_;
@@ -27,8 +29,8 @@ private:
   std::unordered_map<std::string, fieldValue> fields_;
   std::optional<std::chrono::time_point<std::chrono::system_clock>> timestamp_;
 
-  static std::string escape(const std::string& input);
-  static std::string formatValue(const fieldValue& value);
+  std::string escape(const std::string& input) const;
+  std::string formatValue(const fieldValue& value) const;
 };
 
 #endif // INFLUXPOINT_H

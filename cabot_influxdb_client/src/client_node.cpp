@@ -51,6 +51,7 @@ ClientNode::ClientNode()
       RCLCPP_WARN(this->get_logger(), "Could not load anchor_file \"%s\"", anchor_file_.c_str());
     }
   }
+  client_.healthCheck(10);
   pose_interval_ = this->declare_parameter<double>("pose_interval", 1.0);
   cmd_vel_interval_ = this->declare_parameter<double>("cmd_vel_interval", 0.2);
   odom_interval_ = this->declare_parameter<double>("odom_interval", 0.2);

@@ -23,6 +23,8 @@
 #include "client_node.hpp"
 #include "geoutil.hpp"
 
+std::shared_ptr<ClientNode> node_ = nullptr;
+
 ClientNode::ClientNode()
 : Node("client_node"), throttle_(1.0),
   host_(this->declare_parameter<std::string>("host", "")),
@@ -91,6 +93,7 @@ ClientNode::ClientNode()
     battery_topic_, 10, [this](const sensor_msgs::msg::BatteryState::SharedPtr msg) {
       battery_throttle_->call(&ClientNode::battery_callback, this, msg);
     });
+/*
   if(!image_left_topic_.empty()){
     image_left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
       image_left_topic_, 10, [this](const sensor_msgs::msg::Image::SharedPtr msg) {
@@ -107,11 +110,44 @@ ClientNode::ClientNode()
         image_right_throttle_->call(&ClientNode::image_callback, this, msg, "right");
       });
   }
+*/
+  if(!image_left_topic_.empty()){
+    compressed_image_left_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
+      image_left_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
+        image_left_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "left");
+      });
+  }
+  compressed_image_center_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
+    image_center_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
+      image_center_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "center");
+    });
+  if(!image_right_topic_.empty()){
+    compressed_image_right_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
+      image_right_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
+        image_right_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "right");
+      });
+  }
   event_sub_ = this->create_subscription<cabot_msgs::msg::Log>(
     "/cabot/activity_log", 10, [this](const cabot_msgs::msg::Log::SharedPtr msg) {
       this->ClientNode::activity_log_callback(msg);
     });
 }
+
+ClientNode::~ClientNode() {
+  RCLCPP_INFO(this->get_logger(), "Shutting down ClientNode and releasing recources");
+  //cleanup();
+}
+
+void signal_handler(int signal) {
+  if (node_) {
+    RCLCPP_INFO(node_->get_logger(), "Signal received: %d, shutting down...", signal);
+    cleanup();
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "node is null, skipping cleanup.");
+  }
+  rclcpp::shutdown();
+}
+
 std::chrono::time_point<std::chrono::system_clock> ClientNode::get_nanosec(
   const rclcpp::Time & stamp)
 {
@@ -326,6 +362,33 @@ void ClientNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg, co
   }
 }
 
+void ClientNode::compressed_image_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg, const std::string & direction)
+{
+  try {
+    //cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    cv::Mat compressed_image = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
+    cv::Mat resized_image = resize_with_aspect_ratio(compressed_image, 512);
+    cv::Mat rotated_image = rotate_image(resized_image, direction);
+    std::vector<uchar> buf;
+    cv::imencode(".jpg", rotated_image, buf, {cv::IMWRITE_JPEG_QUALITY, 80});
+    std::string jpg_as_text = base64_encode(buf);
+    InfluxPoint point{"image"};
+    point.addField("data", jpg_as_text)
+         .addTag("format", "jpeg")
+         .addTag("direction", direction)
+         .addTag("robot_name", robot_name_)
+         .setTimestamp(get_nanosec(msg->header.stamp));
+    std::string lineProtocol = point.toLineProtocol();
+    if (!client_.sendData(lineProtocol)) {
+      throw std::runtime_error("Failed to send data to InfluxDB");
+    }
+  } catch (const cv_bridge::Exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to process image: %s", e.what());
+  }
+}
+
 cv::Mat ClientNode::resize_with_aspect_ratio(const cv::Mat& image, int target_size) {
   int original_width = image.cols;
   int original_height = image.rows;
@@ -438,7 +501,8 @@ void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  std::shared_ptr<ClientNode> node_ = std::make_shared<ClientNode>();
+  node_ = std::make_shared<ClientNode>();
+  std::signal(SIGINT, signal_handler);
   rclcpp::spin(node_);
   rclcpp::shutdown();
   return 0;

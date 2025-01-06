@@ -29,6 +29,7 @@
 #include <cmath>
 #include <ctime>
 #include <chrono>
+#include <csignal>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -53,6 +54,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/parameter.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "InfluxDB.hpp"
@@ -97,6 +99,7 @@ class ClientNode : public rclcpp::Node
 {
 public:
   ClientNode();
+  virtual ~ClientNode();
 
 private:
   std::string robot_name_;
@@ -140,6 +143,10 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_left_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_center_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_right_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_left_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_center_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_right_sub_;
+
   rclcpp::Subscription<cabot_msgs::msg::Log>::SharedPtr event_sub_;
   int64_t last_error_;
 
@@ -154,6 +161,7 @@ private:
   void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
   void battery_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
   void image_callback(const sensor_msgs::msg::Image::SharedPtr msg, const std::string & direction);
+  void compressed_image_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg, const std::string & direction);
   cv::Mat resize_with_aspect_ratio(const cv::Mat& image, int target_size);
   cv::Mat rotate_image(const cv::Mat& image, const std::string& direction);
   std::string base64_encode(const std::vector<uchar>& data);

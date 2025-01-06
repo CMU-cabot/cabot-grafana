@@ -19,62 +19,71 @@ InfluxPoint& InfluxPoint::setTimestamp(std::chrono::time_point<std::chrono::syst
 }
 
 std::string InfluxPoint::toLineProtocol() const {
-  std::string line = escape(measurement_);
+  std::ostringstream oss;
+  oss << escape(measurement_);
   for (const auto& tag : tags_) {
-    line += "," + escape(tag.first) + "=" + escape(tag.second);
+    oss << "," << escape(tag.first) << "=" << escape(tag.second);
   }
   if (!fields_.empty()) {
     bool firstField = true;
-    line += " ";
+    oss << " ";
     for (const auto& field : fields_) {
-      line += (firstField ? "" : ",") + escape(field.first) + "=" + formatValue(field.second);
+      if (!firstField) {
+        oss << ",";
+      }
+      oss << escape(field.first) << "=" << formatValue(field.second);
       firstField = false;
     }
   }
   if (timestamp_) {
     long long timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
       *timestamp_ - std::chrono::system_clock::from_time_t(0)).count();
-    line += " " + std::to_string(timestamp_ns);
+    oss << " " << timestamp_ns;
   }
-  return line;
+  return oss.str();
 }
 
 std::string InfluxPoint::escape(const std::string& input) const {
   std::string output;
-  output.reserve(input.size() * 2);
-  for (char c : input) {
-    if (c == ',' || c == '=' || c == ' ' || c == '"' || c == '\\') output += '\\';
-    output += c;
+  output.reserve(input.size());
+  for (char c :input) {
+    switch (c) {
+      case ',':
+      case '=':
+      case ' ':
+      case '"':
+      case '\\':
+        output += '\\';
+        [[fallthrough]];
+      default:
+        output += c;
+    }
   }
   return output;
 }
 
 std::string InfluxPoint::formatValue(const fieldValue& value) const {
-  std::string  line;
-  std::visit([this, &line](const auto& v) {
+  return std::visit([this](const auto& v) -> std::string {
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, std::string>) {
-      line = "\"" + v + "\"";
+      return "\"" + v + "\"";
     } else if constexpr (std::is_same_v<T, bool>) {
-      line = v ? "true" : "false";
+      return v ? "true" : "false";
     } else if constexpr (std::is_integral_v<T>) {
-      line = std::to_string(v) + "i";
+      return std::to_string(v) + "i";
     } else if constexpr (std::is_floating_point_v<T>) {
-      line = this -> formatFloatingPoint(v);
+      return this->formatFloatingPoint(v);
     } else {
-      line = std::to_string(v);
+      return std::to_string(v);
     }
   }, value);
-  return line;
 }
 
 std::string InfluxPoint::formatFloatingPoint(double value, int precision) const {
   char buffer[64];
-  char* end = buffer + sizeof(buffer);
-  auto result = std::to_chars(buffer, end, value, std::chars_format::fixed, precision);
+  auto result = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::fixed, precision);
   if (result.ec == std::errc()) {
     return std::string(buffer, result.ptr);
-  } else {
-    throw std::runtime_error("Failed to format floating point number");
   }
+  return "0";
 }

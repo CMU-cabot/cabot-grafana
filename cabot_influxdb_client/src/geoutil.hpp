@@ -33,7 +33,10 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <yaml-cpp/yaml.h>
+#include <mutex>
+#include <map>
 #include <cmath>
+#include <stdexcept>
 #include <cstdio>
 #include <cassert>
 #include <iomanip>
@@ -44,10 +47,7 @@
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <proj/coordinateoperation.hpp>
-#include <proj/util.hpp>
-#include <proj/crs.hpp>
-#include <proj/io.hpp>
+#include <proj.h>
 #include "cabot_rclcpp_util.hpp"
 
 class Point
@@ -83,5 +83,7 @@ double get_point_resolution(const Anchor & anchor);
 Point xy2mercator(const Point & src_xy, const Anchor & anchor);
 Latlng local2global(const Point & xy, Anchor & anchor);
 Anchor get_anchor(const std::string & anchor_file);
+
+void cleanup();
 
 #endif  // GEOUTIL_HPP_

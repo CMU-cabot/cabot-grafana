@@ -61,13 +61,14 @@ void InfluxDB::resetConnection() {
 }
 
 bool InfluxDB::sendData(const std::string& lineProtocolData, int max_retries) {
-  backoff_ms = 1000;
+  int backoff_ms = 1000;
   for (int attempt = 1; attempt <= max_retries; ++attempt) {
     if (!setupCurl()) {
       log_error("Failed to set up CURL connection");
       return false;
     }
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, lineProtocolData.c_str());
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, lineProtocolData.size());
     std::string response_body;
     curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response_body);
@@ -92,12 +93,14 @@ bool InfluxDB::sendData(const std::string& lineProtocolData, int max_retries) {
 }
 
 size_t InfluxDB::write_callback(void* contents, size_t size, size_t nmemb, void* userp) {
-  ((std::string*)userp)->append((char*)contents, size * nmemb);
+  if (userp) {
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+  }
   return size * nmemb;
 }
 
 std::string InfluxDB::escapeUrl(const std::string& str) const {
-  char* escaped = curl_easy_escape(nullptr, str.c_str(), str.length());
+  char* escaped = curl_easy_escape(curl_, str.c_str(), static_cast<int>(str.size()));
   if (escaped) {
     std::string escapedStr(escaped);
     curl_free(escaped);

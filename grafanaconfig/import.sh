@@ -1,6 +1,6 @@
 #!/bin/bash
 
-host=localhost:3000
+source .env
 
 function help {
     echo "Usage: $0 <option>"
@@ -34,18 +34,16 @@ while getopts "hs:b:" arg; do
 done
 shift $((OPTIND-1))
 
-api_key=$(jq -r .key api-key.txt)
-
-
 if [[ $datasource != "" ]]; then
     jq .[0] $datasource > temp.json
     
-    curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $api_key" \
-	 -d @temp.json http://$host/api/datasources > /dev/null
+    curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY" \
+	 -d @temp.json $GRAFANA_HOST/api/datasources > /dev/null
 fi
 
 
 if [[ $dashboard != "" ]]; then
-    curl -v -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $api_key" \
-	 -d @$dashboard http://$host/api/dashboards/import > /dev/null
+    curl -v -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY
+" \
+	 -d @$dashboard $GRAFANA_HOST/api/dashboards/import > /dev/null
 fi

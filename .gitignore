@@ -1,2 +1,4 @@
 cabot-common
 grafana
+.env
+*.json

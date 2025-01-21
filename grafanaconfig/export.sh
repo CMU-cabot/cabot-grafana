@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source common.sh
+source .env
 
 function help {
     echo "Usage: $0 <option>"
@@ -9,6 +9,7 @@ function help {
     echo "-s        export data source"
     echo "-l        list dashboards"
     echo "-b <uid>  export specified dashboard"
+    echo "-D        export all dashboards"
 }
 
 pwd=$(pwd)
@@ -19,8 +20,9 @@ scriptdir=$(pwd)
 datasource=0
 list_dashboard=0
 dashboard=
+all_dashboards=0
 
-while getopts "hslb:" arg; do
+while getopts "hslb:D" arg; do
     case $arg in
 	h)
 	    help
@@ -35,15 +37,15 @@ while getopts "hslb:" arg; do
 	b)
 	    dashboard=$OPTARG
 	    ;;
+    D)
+        all_dashboards=1
+        ;;
     esac
 done
 shift $((OPTIND-1))
 
-api_key=$(jq -r .key api-key.txt)
-
-
 if [[ $datasource -eq 1 ]]; then
-    curl -H "Authorization: Bearer $api_key" http://$host/api/datasources
+    curl -H "Authorization: Bearer $API_KEY" $GRAFANA_HOST/api/datasources
     echo ""
     echo -en "\033[31m" >&2 # red
     echo "You need to add your token by adding 'secureJsonData.json'" >&2
@@ -52,10 +54,18 @@ fi
 
 
 if [[ $list_dashboard -eq 1 ]]; then
-    curl -H "Authorization: Bearer $api_key" "http://$host/api/search?query=&type=dash-db" 2> /dev/null | jq -r '.[] | "\(.title) - \(.uid)"'
+    curl -H "Authorization: Bearer $API_KEY" "$GRAFANA_HOST/api/search?query=&type=dash-db" 2> /dev/null | jq -r '.[] | "\(.title) - \(.uid)"'
 fi
 
 if [[ $dashboard != "" ]]; then
-    curl -H "Authorization: Bearer $api_key" http://$host/api/dashboards/uid/$dashboard | jq 'del(.meta) | .dashboard.id = null'
+    curl -H "Authorization: Bearer $API_KEY" $GRAFANA_HOST/api/dashboards/uid/$dashboard | jq 'del(.meta) | .dashboard.id = null' > $dashboard.json
 fi
 
+if [[ $all_dashboards -eq 1 ]]; then
+    mkdir -p dashboards
+    cd dashboards
+    curl -H "Authorization: Bearer $API_KEY" "$GRAFANA_HOST/api/search?query=&type=dash-db" 2> /dev/null | jq -r '.[] | "\(.uid)"' \
+    | while read uid; do
+        curl -H "Authorization: Bearer $API_KEY" $GRAFANA_HOST/api/dashboards/uid/$uid | jq 'del(.meta) | .dashboard.id = null' > $uid.json
+      done
+fi

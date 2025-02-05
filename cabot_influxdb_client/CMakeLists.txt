@@ -56,6 +56,8 @@ add_executable(client_node
   src/cabot_rclcpp_util.cpp
   src/geoutil.cpp
   src/client_node.cpp
+  src/InfluxPoint.cpp
+  src/InfluxDB.cpp
 )
 
 include_directories(client_node

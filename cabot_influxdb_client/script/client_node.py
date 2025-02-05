@@ -28,11 +28,12 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
-from sensor_msgs.msg import Image, BatteryState
+from sensor_msgs.msg import Image, BatteryState, CompressedImage
 from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
 import base64
+import numpy as np
 
 from cabot_ui import geoutil
 from cabot_ui.cabot_rclpy_util import CaBotRclpyUtil
@@ -154,11 +155,11 @@ class ClientNode(Node):
         self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback(temperature_interval_bme, 'bme', thermometer_position_map['bme']), 10)
 
         if image_left_topic:
-            self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
+            self.image_left_sub = self.create_subscription(CompressedImage, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
-            self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
+            self.image_center_sub = self.create_subscription(CompressedImage, image_center_topic, self.image_callback(image_interval, "center"), 10)
         if image_right_topic:
-            self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)
+            self.image_right_sub = self.create_subscription(CompressedImage, image_right_topic, self.image_callback(image_interval, "right"), 10)
         self.event_sub = self.create_subscription(Log, '/cabot/activity_log', self.activity_log_callback, 10)
         self.bridge = CvBridge()
 
@@ -270,8 +271,10 @@ class ClientNode(Node):
 
     def image_callback(self, interval, direction):
         @throttle(interval)
-        def inner_func(msg):
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        def inner_func(msg: CompressedImage):
+            #cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            np_arr = np.frombuffer(msg.data, np.uint8)
+            cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             if direction in self.rotate_images:
                 cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
             cv_image = resize_with_aspect_ratio_cv2(cv_image, 512)

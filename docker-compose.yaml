@@ -70,13 +70,13 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_DATABASE_TYPE=mysql
-      - GF_DATABASE_HOST=your-azure-mysql-host.mysql.database.azure.com
-      - GF_DATABASE_NAME=grafana
-      - GF_DATABASE_USER=your-mysql-user@your-azure-mysql-host
-      - GF_DATABASE_PASSWORD=your-mysql-password
-      - GF_DATABASE_SSL_MODE=skip-verify
-      - GF_DATABASE_CA_CERT_PATH=/etc/ssl/certs/DigiCertGlobalRootCA.crt.pem
+      - GF_DATABASE_TYPE
+      - GF_DATABASE_HOST
+      - GF_DATABASE_NAME
+      - GF_DATABASE_USER
+      - GF_DATABASE_PASSWORD
+      - GF_DATABASE_SSL_MODE
+      - GF_DATABASE_CA_CERT_PATH
     volumes:
       - grafana-storage:/var/lib/grafana
     entrypoint: ["/entrypoint.sh"]

@@ -43,6 +43,10 @@ while getopts "hgi" arg; do
 done
 shift $((OPTIND-1))
 
+if [[ -e $scriptdir/.env ]]; then
+    source $scriptdir/.env
+fi
+
 if [[ $init_influxdb -eq 1 ]]; then
     blue "initialize influxdb server"
     script -q -c "docker compose exec influxdb \
@@ -58,7 +62,7 @@ fi
 if [[ $init_grafana -eq 1 ]]; then
     blue "initialize grafana server"
     cd ./grafanaconfig
-    ./setup.sh
+    source <(./make-key.sh)
     ./import.sh -s datasources.json
     ./import.sh -b dashboard.json
     cd ..

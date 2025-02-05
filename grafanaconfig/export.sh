@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source .env
-
 function help {
     echo "Usage: $0 <option>"
     echo ""
@@ -17,6 +15,11 @@ scriptdir=$(dirname $0)
 cd $scriptdir
 scriptdir=$(pwd)
 
+if [[ -e $scriptdir/../.env ]]; then
+    source $scriptdir/../.env
+fi
+
+: ${GRAFANA_HOST:=http://localhost:3000}
 datasource=0
 list_dashboard=0
 dashboard=

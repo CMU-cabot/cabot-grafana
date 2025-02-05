@@ -5,11 +5,17 @@
 - jq
   - `sudo apt-get install jq`
 
-## build
+## use built docker images
+
+```
+./docker compose --profile "*" pull
+```
+
+### you can build images from scratch
 
 ```
 ./setup-dependency.sh
-./build-docker.sh -i -w
+./bake-docker.sh -i
 ```
 
 ## launch cabot grafana clients
@@ -17,6 +23,13 @@
 ```
 # modify .env file
 ./launch.sh
+```
+
+## launch grafana/influxdb servers
+
+```
+# modify .env file
+./server-launch.sh
 ```
 
 ### Environment variables (.env)
@@ -39,6 +52,16 @@ CABOT_INFLUXDB_HOST                # host including http/https and port   (defau
 CABOT_INFLUXDB_TOKEN               # token                                (default a54a87f7-73a0-4534-9741-ad7ff4e7d111  - development default)
 CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
 CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
+
+GF_DATABASE_TYPE                   # database type (e.g., mysql)
+GF_DATABASE_HOST                   # database host (e.g., your-azure-mysql-host.mysql.database.azure.com)
+GF_DATABASE_NAME                   # database name (e.g., grafana)
+GF_DATABASE_USER                   # database user (e.g., your-mysql-user@your-azure-mysql-host)
+GF_DATABASE_PASSWORD               # database password
+GF_DATABASE_SSL_MODE               # SSL mode (e.g., skip-verify)
+GF_DATABASE_CA_CERT_PATH           # path to CA certificate (e.g., /etc/ssl/certs/DigiCertGlobalRootCA.crt.pem)
+
+GRAFANA_HOST                       # grafana host for export/import dashboard
 ```
 
 ## debug multiple robot grafana visualization with a single client
@@ -53,22 +76,8 @@ CABOT_INFLUXDB_BUCKET              # bucket                               (defau
 ```
 # first terminal (launch grafana and influxdb)
 sudo chown -R 472:472 grafanadb
-./launch.sh -s -d -i # first time only
-./launch.sh -s -d
-# second terminal (launch cabot_influxdb_client)
-./launch.sh
-```
-
-
-## launch local grafana/influxDB for development
-- cannot show multiple robot pathes
-- cannot show camera images
-
-```
-# first terminal (launch grafana and influxdb)
-sudo chown -R 472:472 grafanadb
-./launch.sh -s -i # first time only
-./launch.sh -s
+./server-launch.sh
+./init-server.sh -i -g
 # second terminal (launch cabot_influxdb_client)
 ./launch.sh
 ```

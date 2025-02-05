@@ -41,7 +41,7 @@ cd $scriptdir
 scriptdir=$(pwd)
 
 dcfile="docker-compose.yaml"
-profile=client
+profile=server
 
 dccom="docker compose --profile $profile"
 eval "$dccom up"

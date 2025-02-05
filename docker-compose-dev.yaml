@@ -1,16 +1,15 @@
 version: "2.3"
 
-
 services:
   influxdb:
-    build:
-      context: docker/influxdb
+    image: influxdb:2.7.5
     networks:
       - grafana_network
     ports:
       - 127.0.0.1:8086:8086
     volumes:
       - ./influxdb:/var/lib/influxdb2
+
 
   dev:
     build:
@@ -26,6 +25,38 @@ services:
       - /launch.sh
       - launch
 
+  server:
+    build:
+      context: docker/server
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DATABASE_TYPE=mysql
+      - GF_DATABASE_HOST=your-azure-mysql-host.mysql.database.azure.com
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=your-mysql-user@your-azure-mysql-host
+      - GF_DATABASE_PASSWORD=your-mysql-password
+      - GF_DATABASE_SSL_MODE=skip-verify
+      - GF_DATABASE_CA_CERT_PATH=/etc/ssl/certs/DigiCertGlobalRootCA.crt.pem
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    entrypoint: ["/entrypoint.sh"]
+    command:
+      [
+        "grafana",
+        "server",
+        "-homepath",
+        "/usr/share/grafana",
+        "-config",
+        "/etc/grafana/grafana.ini",
+      ]
+
 networks:
   grafana_network:
     name: grafana_network
+
+volumes:
+  grafana-storage:

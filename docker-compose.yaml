@@ -1,10 +1,18 @@
-version: "2.3"
-
-
 services:
-  client:
+  influxdb-client:
+    image: cmucal/cabot-influxdb-client:${CABOT_LAUNCH_IMAGE_TAG:-latest}
     build:
       context: ./docker/client
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-influxdb-client
+        platforms:
+          - linux/arm64
+          - linux/amd64
+        output:
+          - type=registry
+    profiles:
+      - client
     network_mode: host  # to communicate with other ROS2 node
     environment:
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
@@ -31,6 +39,61 @@ services:
       - ./launch.sh
       - launch
 
+  influxdb:
+    image: influxdb:2.7.5
+    profiles:
+      - server
+    networks:
+      - grafana_network
+    ports:
+      - 127.0.0.1:8086:8086
+    volumes:
+      - ./influxdb:/var/lib/influxdb2
+
+  grafana-server:
+    image: cmucal/cabot-grafana-server:${CABOT_LAUNCH_IMAGE_TAG:-latest}
+    build:
+      context: docker/server
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-grafana-server
+        platforms:
+          - linux/arm64
+          - linux/amd64
+        output:
+          - type=registry
+    profiles:
+      - server
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DATABASE_TYPE=mysql
+      - GF_DATABASE_HOST=your-azure-mysql-host.mysql.database.azure.com
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=your-mysql-user@your-azure-mysql-host
+      - GF_DATABASE_PASSWORD=your-mysql-password
+      - GF_DATABASE_SSL_MODE=skip-verify
+      - GF_DATABASE_CA_CERT_PATH=/etc/ssl/certs/DigiCertGlobalRootCA.crt.pem
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    entrypoint: ["/entrypoint.sh"]
+    command:
+      [
+        "grafana",
+        "server",
+        "-homepath",
+        "/usr/share/grafana",
+        "-config",
+        "/etc/grafana/grafana.ini",
+      ]
+
 networks:
   grafana_network:
     name: grafana_network
+
+volumes:
+  grafana-storage:
+

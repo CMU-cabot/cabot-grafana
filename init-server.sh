@@ -62,7 +62,8 @@ fi
 if [[ $init_grafana -eq 1 ]]; then
     blue "initialize grafana server"
     cd ./grafanaconfig
-    source <(./make-key.sh)
+    ./make-key.sh  >> ../.env
+    env | grep API_KEY
     ./import.sh -s datasources.json
     ./import.sh -b dashboard.json
     cd ..

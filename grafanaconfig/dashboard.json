@@ -579,7 +579,14 @@
           "height": 0,
           "heightMode": "auto",
           "infinityPlay": false,
-          "mediaSources": [],
+          "mediaSources": [
+            {
+              "field": "data",
+              "id": "1b5567ca-8c95-4079-bc60-f799b4212b9a",
+              "refId": "A",
+              "type": "image"
+            }
+          ],
           "noResultsMessage": "Nothing to display...",
           "pdfToolbar": true,
           "scale": "auto",
@@ -624,7 +631,14 @@
           "height": 0,
           "heightMode": "auto",
           "infinityPlay": false,
-          "mediaSources": [],
+          "mediaSources": [
+            {
+              "field": "data",
+              "id": "f4fe8396-2411-45ff-bd4b-631d399cbff8",
+              "refId": "A",
+              "type": "image"
+            }
+          ],
           "noResultsMessage": "Nothing to display...",
           "pdfToolbar": true,
           "scale": "auto",
@@ -1245,7 +1259,7 @@
     "timezone": "",
     "title": "CaBot Test",
     "uid": "ae0eba99-4636-4fa2-a82f-e521e673694c",
-    "version": 1,
+    "version": 3,
     "weekStart": ""
   }
 }

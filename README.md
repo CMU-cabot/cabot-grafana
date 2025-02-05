@@ -25,13 +25,6 @@
 ./launch.sh
 ```
 
-## launch grafana/influxdb servers
-
-```
-# modify .env file
-./server-launch.sh
-```
-
 ### Environment variables (.env)
 
 ```
@@ -62,6 +55,7 @@ GF_DATABASE_SSL_MODE               # SSL mode (e.g., skip-verify)
 GF_DATABASE_CA_CERT_PATH           # path to CA certificate (e.g., /etc/ssl/certs/DigiCertGlobalRootCA.crt.pem)
 
 GRAFANA_HOST                       # grafana host for export/import dashboard
+GRAFANA_API_KEY                    # grafana api key
 ```
 
 ## debug multiple robot grafana visualization with a single client

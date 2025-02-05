@@ -40,14 +40,14 @@ shift $((OPTIND-1))
 if [[ $datasource != "" ]]; then
     jq .[0] $datasource > temp.json
     
-    curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY" \
+    curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GRAFANA_API_KEY" \
 	 -d @temp.json $GRAFANA_HOST/api/datasources
 	echo ""
 fi
 
 
 if [[ $dashboard != "" ]]; then
-    curl -v -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY" \
+    curl -v -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GRAFANA_API_KEY" \
 	 -d @$dashboard $GRAFANA_HOST/api/dashboards/import
 	echo ""
 fi

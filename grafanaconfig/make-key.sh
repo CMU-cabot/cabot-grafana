@@ -40,5 +40,5 @@ curl -s -b cookies.txt -X POST -H "Content-Type: application/json" \
 rm cookies.txt
 api_key=$(jq -r .key api-key.txt)
 echo "# copy this to your .env"
-echo "API_KEY=$api_key"
+echo "GRAFANA_API_KEY=$api_key"
 rm api-key.txt

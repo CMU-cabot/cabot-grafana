@@ -3,6 +3,8 @@ services:
     image: cmucal/cabot-influxdb-client:${CABOT_LAUNCH_IMAGE_TAG:-latest}
     build:
       context: ./docker/client
+      additional_contexts:
+        cabot_src: ./
       x-bake:
         tags:
           - ${REGISTRY:-cmucal}/cabot-influxdb-client
@@ -12,7 +14,7 @@ services:
         output:
           - type=registry
     profiles:
-      - client
+      - build
     network_mode: host  # to communicate with other ROS2 node
     environment:
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
@@ -30,14 +32,27 @@ services:
       - CABOT_INFLUXDB_TOKEN
       - CABOT_INFLUXDB_ORG
       - CABOT_INFLUXDB_BUCKET
+    command:
+      - ./launch.sh
+      - launch
+
+  influxdb-client-dev:
+    extends: influxdb-client
+    profiles:
+      - dev
     volumes:
       - ./docker/home:/home/developer/
       - ${CABOT_ANCHOR_FILE:-./zero-anchor.yaml}:/home/developer/ros2_ws/src/anchor_file.yaml
       - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
       - ./cabot-common/cabot_msgs:/home/developer/ros2_ws/src/cabot_msgs
-    command:
-      - ./launch.sh
-      - launch
+
+  influxdb-client-prod:
+    extends: influxdb-client
+    profiles:
+      - prod
+    volumes:
+      - ${CABOT_ANCHOR_FILE:-./zero-anchor.yaml}:/home/developer/ros2_ws/src/anchor_file.yaml
+      - ./docker/home/.ros:/home/developer/.ros
 
   influxdb:
     image: influxdb:2.7.5
@@ -58,14 +73,15 @@ services:
         tags:
           - ${REGISTRY:-cmucal}/cabot-grafana-server
         platforms:
-          - linux/arm64
           - linux/amd64
         output:
           - type=registry
     profiles:
       - server
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
+    networks:
+      - grafana_network
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin

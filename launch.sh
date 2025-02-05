@@ -32,8 +32,27 @@ function help {
     echo "Usage: $0 <option>"
     echo ""
     echo "-h                    "
-    echo "-s                    launch server in development mode"
+    echo "-d                    development mode"
 }
+
+development=0
+
+while getopts "hd" opt; do
+    case $opt in
+    h)
+        help
+        exit 0
+        ;;
+    d)
+        development=1
+        ;;
+    \?)
+        red "Invalid option: -$OPTARG"
+        exit 1
+        ;;
+    esac
+done
+shift $((OPTIND-1))
 
 pwd=$(pwd)
 scriptdir=$(dirname $0)
@@ -41,7 +60,10 @@ cd $scriptdir
 scriptdir=$(pwd)
 
 dcfile="docker-compose.yaml"
-profile=client
+profile=prod
+if [[ $development -eq 1 ]]; then
+    profile=dev
+fi
 
 dccom="docker compose --profile $profile"
 eval "$dccom up"

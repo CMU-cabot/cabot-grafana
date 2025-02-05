@@ -54,7 +54,7 @@ launch:
 
   - node:
       pkg: cabot_influxdb_client
-      exec: client_node
+      exec: client_node.py
       name: client_node
       param:
         -

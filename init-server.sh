@@ -55,7 +55,7 @@ if [[ $init_influxdb -eq 1 ]]; then
         --password ${INFLUXDB_PASSWORD:-cabot-influxdb} \
         --token ${INFLUXDB_TOKEN:-a54a87f7-73a0-4534-9741-ad7ff4e7d111}\
         --org ${INFLUXDB_ORGANIZATION_NAME:-cabot} \
-        --bucket ${INFLUXDB_BUCKET_NAME:-bucket} \
+        --bucket ${INFLUXDB_BUCKET_NAME:-cabot } \
         --force" /dev/null
 fi
 

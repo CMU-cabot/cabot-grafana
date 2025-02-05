@@ -45,6 +45,8 @@ CABOT_INFLUXDB_HOST                # host including http/https and port   (defau
 CABOT_INFLUXDB_TOKEN               # token                                (default a54a87f7-73a0-4534-9741-ad7ff4e7d111  - development default)
 CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
 CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
+CABOT_INFLUXDB_USE_CPP             # use cpp implementation if true
+
 
 GF_DATABASE_TYPE                   # database type (e.g., mysql)
 GF_DATABASE_HOST                   # database host (e.g., your-azure-mysql-host.mysql.database.azure.com)

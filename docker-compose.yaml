@@ -33,6 +33,7 @@ services:
       - CABOT_INFLUXDB_TOKEN
       - CABOT_INFLUXDB_ORG
       - CABOT_INFLUXDB_BUCKET
+      - CABOT_INFLUXDB_USE_CPP
     command:
       - ./launch.sh
       - launch

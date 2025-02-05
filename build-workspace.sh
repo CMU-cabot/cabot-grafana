@@ -34,19 +34,15 @@ function help {
     echo ""
     echo "-h                    show this help"
     echo "-d                    debug build"
-    echo "-w                    build docker ws"
-    echo "-o                    build host ws"
 
     echo "Available services:"
     show_available_services dcfiles
 }
 
 debug_build=0
-build_docker_ws=0
-build_host_ws=0
 dcfiles=("docker-compose.yaml")
 
-while getopts "hdwo" arg; do
+while getopts "hd" arg; do
     case $arg in
     h)
         help
@@ -54,12 +50,6 @@ while getopts "hdwo" arg; do
         ;;
     d)
         debug_build=1
-        ;;
-    w)
-        build_docker_ws=1
-        ;;
-    o)
-        build_host_ws=1
         ;;
     esac
 done
@@ -72,35 +62,4 @@ if [ $arch != "x86_64" ] && [ $arch != "aarch64" ]; then
     exit 1
 fi
 
-if [[ $build_docker_ws -eq 0 ]] && [[ $build_host_ws -eq 0 ]]; then
-    help
-    exit 1
-fi
-
-if [[ $build_docker_ws -eq 1 ]]; then
-    build_workspace dcfiles targets arch debug_build
-    if [ $? != 0 ]; then exit 1; fi
-fi
-
-if [[ $build_host_ws -eq 1 ]]; then
-    scriptdir=$(dirname $0)
-    cd $scriptdir/host_ws
-    if [[ -z $ROS_DISTRO ]]; then
-	# try to find a
-	red "ROS_DISTRO is not set, so try to find the lastest ROS2 distro in the system"
-	source $(find /opt/ros/ -maxdepth 2 -name setup.bash -exec grep -l ament {} + | sort -r | head -1)
-    else
-	source /opt/ros/$ROS_DISTRO/setup.bash
-    fi
-    blue "$ROS_DISTRO is found"
-
-    blue "build host_ws"
-    if $debug; then
-        blue "colcon build --symlink-install"
-        colcon build --symlink-install
-    else
-        blue "colcon build"
-        colcon build
-    fi
-    if [ $? != 0 ]; then exit 1; fi
-fi
+build_workspace dcfiles targets arch debug_build

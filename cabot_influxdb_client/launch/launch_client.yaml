@@ -1,4 +1,3 @@
-
 launch:
   - arg:
       name: robot_name
@@ -51,12 +50,16 @@ launch:
   - arg:
       name: anchor_file
       default: /home/developer/ros2_ws/src/anchor_file.yaml
+  - arg:
+      name: use_cpp
+      default: $(env CABOT_INFLUXDB_USE_CPP false)
 
   - node:
       pkg: cabot_influxdb_client
-      exec: client_node.py
+      exec: client_node
       name: client_node
-      param:
+      if: $(var use_cpp)
+      param: &param
         -
           name: robot_name
           value: $(var robot_name)
@@ -108,3 +111,10 @@ launch:
         -
           name: anchor_file
           value: $(var anchor_file)
+
+  - node:
+      pkg: cabot_influxdb_client
+      exec: client_node.py
+      name: client_node
+      unless: $(var use_cpp)
+      param: *param

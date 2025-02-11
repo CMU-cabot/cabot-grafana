@@ -23,7 +23,8 @@
 import math
 import rclpy
 from rclpy.node import Node
-from cabot_msgs.msg import PoseLog, Log
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+from cabot_msgs.msg import PoseLog, Log, Anchor
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
@@ -99,7 +100,7 @@ class ClientNode(Node):
         self.token = self.declare_parameter("token", "").value
         self.org = self.declare_parameter("org", "").value
         self.bucket = self.declare_parameter("bucket", "").value
-        anchor_file = self.declare_parameter("anchor_file", "").value
+        self.anchor = None
         battery_topic = self.declare_parameter("battery_topic", "").value
         image_left_topic = self.declare_parameter("image_left_topic", "").value
         image_center_topic = self.declare_parameter("image_center_topic", "").value
@@ -107,14 +108,7 @@ class ClientNode(Node):
         self.get_logger().info(F"image_topics is {image_left_topic}, {image_center_topic}, {image_right_topic}")
         self.rotate_image = self.declare_parameter("image_rotate", "").value
         self.rotate_images = self.rotate_image.split(",")
-        self.anchor = None
-        self.get_logger().info(F"Anchor file is {anchor_file}")
-        if anchor_file is not None:
-            temp = geoutil.get_anchor(anchor_file)
-            if temp is not None:
-                self.anchor = temp
-            else:
-                self.get_logger.warn(F"could not load anchor_file \"{anchor_file}\"")
+
         pose_interval = self.declare_parameter("pose_interval", 1.0).value
         cmd_vel_interval = self.declare_parameter("cmd_vel_interval", 0.2).value
         odom_interval = self.declare_parameter("odom_interval", 0.2).value
@@ -132,6 +126,8 @@ class ClientNode(Node):
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
         self.last_error = None
 
+        transient_local_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        self.anchor_sub = self.create_subscription(Anchor, '/anchor', self.anchor_callback, transient_local_qos)
         self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback(pose_interval), 10)
         self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback(cmd_vel_interval), 10)
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
@@ -173,9 +169,14 @@ class ClientNode(Node):
             self.get_logger().error(f"{e}")
             self.last_error = time.time()
 
+    def anchor_callback(self, anchor):
+        self.anchor = geoutil.Anchor(lat=anchor.lat, lng=anchor.lng, rotate=anchor.rotate)
+
     def pose_log_callback(self, interval):
         @throttle(interval)
         def inner_func(msg):
+            if not self.anchor:
+                return
             orientation = msg.pose.orientation
             (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
             count = 0
@@ -242,6 +243,8 @@ class ClientNode(Node):
         return inner_func
 
     def path_callback(self, msg):
+        if not self.anchor:
+            return
         group = get_nanosec()
         count = 0
         for robot_name in self.robot_names:

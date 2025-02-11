@@ -43,6 +43,7 @@
 #include <boost/algorithm/string.hpp>
 #include <cabot_msgs/msg/log.hpp>
 #include <cabot_msgs/msg/pose_log.hpp>
+#include <cabot_msgs/msg/anchor.hpp>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
@@ -134,6 +135,7 @@ private:
   std::shared_ptr<Throttle> image_left_throttle_;
   std::shared_ptr<Throttle> image_center_throttle_;
   std::shared_ptr<Throttle> image_right_throttle_;
+  rclcpp::Subscription<cabot_msgs::msg::Anchor>::SharedPtr anchor_sub_;
   rclcpp::Subscription<cabot_msgs::msg::PoseLog>::SharedPtr pose_log_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;

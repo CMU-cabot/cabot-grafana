@@ -34,7 +34,6 @@ ClientNode::ClientNode()
   client_(host_, token_, org_, bucket_)
 {
   robot_name_ = this->declare_parameter<std::string>("robot_name", "");
-  anchor_file_ = this->declare_parameter<std::string>("anchor_file", "");
   battery_topic_ = this->declare_parameter<std::string>("battery_topic", "");
   image_left_topic_ = this->declare_parameter<std::string>("image_left_topic", "");
   image_center_topic_ = this->declare_parameter<std::string>("image_center_topic", "");
@@ -44,15 +43,6 @@ ClientNode::ClientNode()
   RCLCPP_INFO(
     this->get_logger(), "image_topics is %s, %s, %s",
     image_left_topic_.c_str(), image_center_topic_.c_str(), image_right_topic_.c_str());
-  RCLCPP_INFO(this->get_logger(), "Anchor file is %s", anchor_file_.c_str());
-  if (!anchor_file_.empty()) {
-    Anchor temp = get_anchor(anchor_file_);
-    if (temp.lat != 0.0 || temp.lng != 0.0 || temp.rotate != 0.0) {
-      anchor_ = temp;
-    } else {
-      RCLCPP_WARN(this->get_logger(), "Could not load anchor_file \"%s\"", anchor_file_.c_str());
-    }
-  }
   client_.healthCheck(10);
   pose_interval_ = this->declare_parameter<double>("pose_interval", 1.0);
   cmd_vel_interval_ = this->declare_parameter<double>("cmd_vel_interval", 0.2);
@@ -69,6 +59,12 @@ ClientNode::ClientNode()
   image_center_throttle_ = std::make_shared<Throttle>(image_interval_);
   image_right_throttle_ = std::make_shared<Throttle>(image_interval_);
 
+  rclcpp::QoS transient_local_qos(1);
+  transient_local_qos.transient_local();
+  anchor_sub_ = this->create_subscription<cabot_msgs::msg::Anchor>(
+    "/anchor", transient_local_qos, [this](const cabot_msgs::msg::Anchor::SharedPtr msg) {
+      anchor_ = Anchor(msg->lat, msg->lng, msg->rotate);
+    });
   pose_log_sub_ = this->create_subscription<cabot_msgs::msg::PoseLog>(
     "/cabot/pose_log", 10, [this](const cabot_msgs::msg::PoseLog::SharedPtr msg) {
       pose_log_throttle_->call(&ClientNode::pose_log_callback, this, msg);

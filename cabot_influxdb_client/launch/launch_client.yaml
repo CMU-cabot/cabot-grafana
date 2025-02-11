@@ -48,9 +48,6 @@ launch:
       name: bucket
       default: $(env CABOT_INFLUXDB_BUCKET cabot)
   - arg:
-      name: anchor_file
-      default: /home/developer/ros2_ws/src/anchor_file.yaml
-  - arg:
       name: use_cpp
       default: $(env CABOT_INFLUXDB_USE_CPP false)
 
@@ -108,9 +105,6 @@ launch:
         -
           name: bucket
           value: $(var bucket)
-        -
-          name: anchor_file
-          value: $(var anchor_file)
 
   - node:
       pkg: cabot_influxdb_client

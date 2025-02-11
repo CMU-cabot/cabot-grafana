@@ -28,7 +28,6 @@
 ### Environment variables (.env)
 
 ```
-CABOT_ANCHOR_FILE                  # cabot_site anchor yaml file for converting ROS coordinate to world coordinate
 CABOT_INFLUXDB_ROBOT_NAME          # robot name like cabot1               (default cabot)
 CABOT_INFLUXDB_BATTERY_TOPIC       # battery topic name                   (default /cabot/battery)
 CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default "")

@@ -1,7 +1,7 @@
 launch:
   - arg:
       name: robot_name
-      default: $(env CABOT_INFLUXDB_ROBOT_NAME cabot)
+      default: $(env CABOT_NAME cabot)
   - arg:
       name: battery_topic
       default: $(env CABOT_INFLUXDB_BATTERY_TOPIC "/cabot/battery")

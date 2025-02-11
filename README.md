@@ -28,7 +28,7 @@
 ### Environment variables (.env)
 
 ```
-CABOT_INFLUXDB_ROBOT_NAME          # robot name like cabot1               (default cabot)
+CABOT_NAME          # robot name like cabot1               (default cabot)
 CABOT_INFLUXDB_BATTERY_TOPIC       # battery topic name                   (default /cabot/battery)
 CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default "")
 CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera              (default /camera/color/image_raw)
@@ -60,7 +60,7 @@ GRAFANA_API_KEY                    # grafana api key
 ```
 
 ## debug multiple robot grafana visualization with a single client
-- set `CABOT_INFLUXDB_ROBOT_NAME` to comma separated names such as `cabot1,cabot2,cabot3`
+- set `CABOT_NAME` to comma separated names such as `cabot1,cabot2,cabot3`
   - The client will generate fake data for each robot name
   - Robot location will be shifted towards North East direction
 

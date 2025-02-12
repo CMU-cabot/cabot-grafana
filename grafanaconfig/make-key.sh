@@ -1,6 +1,13 @@
 #!/bin/bash
 
-source .env
+pwd=$(pwd)
+scriptdir=$(dirname $0)
+cd $scriptdir
+scriptdir=$(pwd)
+
+if [[ -e $scriptdir/../.env ]]; then
+    source $scriptdir/../.env
+fi
 
 function help() {
     echo "Usage: $0 [-h] [-p password]"
@@ -9,6 +16,7 @@ function help() {
     echo "  -p  Password for the admin user"
 }
 
+: ${GRAFANA_HOST:=http://localhost:3000}
 pass=admin
 name=api-key-$(date +%s)
 while getopts "hp:" arg; do
@@ -24,16 +32,13 @@ while getopts "hp:" arg; do
 done
 
 curl -s -c cookies.txt -X POST -H "Content-Type: application/json" -d "{\"user\":\"admin\",\"password\":\"$pass\"}" \
-     $GRAFANA_HOST/login
-
-echo ""
+     $GRAFANA_HOST/login > /dev/null
 
 curl -s -b cookies.txt -X POST -H "Content-Type: application/json" \
      -d "{\"name\":\"$name\", \"role\": \"Admin\"}" $GRAFANA_HOST/api/auth/keys -o api-key.txt
 
 rm cookies.txt
 api_key=$(jq -r .key api-key.txt)
-echo "API_KEY=$api_key"
-echo ""
-echo "copy this to your .env"
+echo "# copy this to your .env"
+echo "GRAFANA_API_KEY=$api_key"
 rm api-key.txt

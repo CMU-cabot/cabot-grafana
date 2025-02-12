@@ -28,13 +28,41 @@
 
 #include "geoutil.hpp"
 
+namespace {
+  PJ* P_latlng_to_mercator = nullptr;
+  PJ* P_mercator_to_latlng = nullptr;
+  PJ* P_latlng_to_mercator_gis = nullptr;
+  PJ* P_mercator_to_latlng_gis = nullptr;
+  std::once_flag init_flag;
+
+  void init_projections() {
+    P_latlng_to_mercator = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:4326", "EPSG:3857", nullptr);
+    P_mercator_to_latlng = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:3857", "EPSG:4326", nullptr);
+    if (P_latlng_to_mercator) {
+      P_latlng_to_mercator_gis = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P_latlng_to_mercator);
+    }
+    if (P_mercator_to_latlng) {
+      P_mercator_to_latlng_gis = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P_mercator_to_latlng);
+    }
+    if (!P_latlng_to_mercator_gis || !P_mercator_to_latlng_gis) {
+      throw std::runtime_error("Failed to initialize projection systems");
+    }
+  }
+
+  void cleanup_projections() {
+    proj_destroy(P_latlng_to_mercator);
+    proj_destroy(P_mercator_to_latlng);
+    proj_destroy(P_latlng_to_mercator_gis);
+    proj_destroy(P_mercator_to_latlng_gis);
+  }
+}
+
 // represent a 2D point
 Point::Point(double x, double y)
 : x(x), y(y) {}
 
-std::string Point::toString() const
-{
-  char buffer[50];
+std::string Point::toString() const {
+  static thread_local char buffer[50];
   snprintf(buffer, sizeof(buffer), "(%.2f, %.2f)", x, y);
   return std::string(buffer);
 }
@@ -43,9 +71,8 @@ std::string Point::toString() const
 Latlng::Latlng(double lat, double lng)
 : lat(lat), lng(lng) {}
 
-std::string Latlng::toString() const
-{
-  char buffer[50];
+std::string Latlng::toString() const {
+  static thread_local char buffer[50];
   snprintf(buffer, sizeof(buffer), "(%.7f, %.7f)", lat, lng);
   return std::string(buffer);
 }
@@ -54,71 +81,45 @@ std::string Latlng::toString() const
 Anchor::Anchor(double lat, double lng, double rotate)
 : Latlng(lat, lng), rotate(rotate) {}
 
-std::string Anchor::toString() const
-{
-  char buffer[70];
+std::string Anchor::toString() const {
+  static thread_local char buffer[70];
   snprintf(buffer, sizeof(buffer), "[%.7f, %.7f](%.2f)", lat, lng, rotate);
   return std::string(buffer);
 }
 
 // convert a LatLng point into a Mercator point
-Point latlng2mercator(const Latlng & latlng)
-{
-  PJ * P = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:4326", "EPSG:3857", NULL);
-  if (P == nullptr) {
-    proj_destroy(P);
-    throw std::runtime_error("Failed to create projection");
+Point latlng2mercator(const Latlng& latlng) {
+  std::call_once(init_flag, init_projections);
+  if (!P_latlng_to_mercator_gis) {
+    throw std::runtime_error("Projection system not initialized");
   }
-  PJ * P_for_GIS = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P);
-  if (P_for_GIS == nullptr) {
-    proj_destroy(P);
-    proj_destroy(P_for_GIS);
-    throw std::runtime_error("Failed to normalize projection");
-  }
-  proj_destroy(P);
-  PJ_COORD a, b;
-  a = proj_coord(latlng.lng, latlng.lat, 0, 0);
-  b = proj_trans(P_for_GIS, PJ_FWD, a);
-  proj_destroy(P_for_GIS);
+
+  PJ_COORD a = proj_coord(latlng.lng, latlng.lat, 0, 0);
+  PJ_COORD b = proj_trans(P_latlng_to_mercator_gis, PJ_FWD, a);
   return Point(b.xy.x, b.xy.y);
 }
 
 // convert a Mercatro point into a LatLng point
-Latlng mercator2latlng(const Point & mercator)
-{
-  PJ * P = proj_create_crs_to_crs(PJ_DEFAULT_CTX, "EPSG:3857", "EPSG:4326", NULL);
-  if (P == nullptr) {
-    proj_destroy(P);
-    throw std::runtime_error("Failed to create projection");
+Latlng mercator2latlng(const Point & mercator) {
+  std::call_once(init_flag, init_projections);
+  if (!P_mercator_to_latlng_gis) {
+    throw std::runtime_error("Projection system not initialized");
   }
-  PJ * P_for_GIS = proj_normalize_for_visualization(PJ_DEFAULT_CTX, P);
-  if (P_for_GIS == nullptr) {
-    proj_destroy(P);
-    proj_destroy(P_for_GIS);
-    throw std::runtime_error("Failed to normalize projection");
-  }
-  proj_destroy(P);
-  PJ_COORD a, b;
-  a = proj_coord(mercator.x, mercator.y, 0, 0);
-  b = proj_trans(P_for_GIS, PJ_FWD, a);
-  proj_destroy(P_for_GIS);
+  PJ_COORD a = proj_coord(mercator.x, mercator.y, 0, 0);
+  PJ_COORD b = proj_trans(P_mercator_to_latlng_gis, PJ_FWD, a);
   return Latlng(b.xy.y, b.xy.x);
 }
 
 // get a resolution at an anchor point
-double get_point_resolution(const Anchor & anchor)
-{
-  const double RADIUS = 6378137;
+double get_point_resolution(const Anchor & anchor) {
+  static const double RADIUS = 6378137.0;
   return 1.0 / cosh(anchor.lat / RADIUS);
 }
 
 // convert a local point in the anchor coordinate into a Mercator point
-Point xy2mercator(const Point & src_xy, const Anchor & anchor)
-{
+Point xy2mercator(const Point & src_xy, const Anchor & anchor) {
   Point mercator = latlng2mercator(anchor);
-  Anchor temp;
-  temp.lng = mercator.x;
-  temp.lat = mercator.y;
+  Anchor temp(mercator.y, mercator.x, 0.0);
   double r = get_point_resolution(temp);
   double x = src_xy.x;
   double y = src_xy.y;
@@ -131,18 +132,27 @@ Point xy2mercator(const Point & src_xy, const Anchor & anchor)
 }
 
 // convert a local point in the anchor coordinate into the global point
-Latlng local2global(const Point & xy, Anchor & anchor)
-{
+Latlng local2global(const Point & xy, Anchor & anchor) {
   Point mercator = xy2mercator(xy, anchor);
   return mercator2latlng(mercator);
 }
 
 // get anchor
-Anchor get_anchor(const std::string & anchor_file)
-{
+Anchor get_anchor(const std::string & anchor_file) {
+  static std::map<std::string, Anchor> anchor_cache;
+  auto it = anchor_cache.find(anchor_file);
+  if (it != anchor_cache.end()) {
+     return it->second;
+  }
   YAML::Node anchor = YAML::LoadFile(anchor_file);
   double lat = anchor["anchor"]["latitude"].as<double>();
   double lng = anchor["anchor"]["longitude"].as<double>();
   double rotate = anchor["anchor"]["rotate"].as<double>();
-  return Anchor(lat, lng, rotate);
+  Anchor result(lat, lng, rotate);
+  anchor_cache[anchor_file] = result;
+  return result;
+}
+
+void cleanup() {
+  cleanup_projections();
 }

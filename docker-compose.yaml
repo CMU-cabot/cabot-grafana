@@ -1,18 +1,27 @@
-version: "2.3"
-
-
 services:
-  client:
+  influxdb-client:
+    image: cmucal/cabot-influxdb-client:${CABOT_LAUNCH_IMAGE_TAG:-latest}
     build:
       context: ./docker/client
+      additional_contexts:
+        cabot_src: ./
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-influxdb-client
+        platforms:
+          - linux/arm64
+          - linux/amd64
+        output:
+          - type=registry
+    profiles:
+      - build
     network_mode: host  # to communicate with other ROS2 node
     environment:
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
-      - CABOT_INFLUXDB_ROBOT_NAME
+      - CABOT_NAME
       - CABOT_INFLUXDB_IMAGE_LEFT_TOPIC
       - CABOT_INFLUXDB_IMAGE_CENTER_TOPIC
       - CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC
-      - CABOT_INFLUXDB_IMAGE_ROTATE
       - CABOT_INFLUXDB_POSE_INTERVAL
       - CABOT_INFLUXDB_CMD_VEL_INTERVAL
       - CABOT_INFLUXDB_ODOM_INTERVAL
@@ -22,15 +31,83 @@ services:
       - CABOT_INFLUXDB_TOKEN
       - CABOT_INFLUXDB_ORG
       - CABOT_INFLUXDB_BUCKET
-    volumes:
-      - ./docker/home:/home/developer/
-      - ${CABOT_ANCHOR_FILE:-./zero-anchor.yaml}:/home/developer/ros2_ws/src/anchor_file.yaml
-      - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
-      - ./cabot-common/cabot_msgs:/home/developer/ros2_ws/src/cabot_msgs
+      - CABOT_INFLUXDB_USE_CPP
     command:
       - ./launch.sh
       - launch
 
+  influxdb-client-dev:
+    extends: influxdb-client
+    profiles:
+      - dev
+    volumes:
+      - ./docker/home:/home/developer/
+      - ./cabot_influxdb_client:/home/developer/ros2_ws/src/cabot_influxdb_client
+      - ./cabot-common/cabot_msgs:/home/developer/ros2_ws/src/cabot_msgs
+
+  influxdb-client-prod:
+    extends: influxdb-client
+    profiles:
+      - prod
+    volumes:
+      - ./docker/home/.ros:/home/developer/.ros
+
+  influxdb:
+    image: influxdb:2.7.5
+    profiles:
+      - server
+    networks:
+      - grafana_network
+    ports:
+      - 127.0.0.1:8086:8086
+    volumes:
+      - ./influxdb:/var/lib/influxdb2
+
+  grafana-server:
+    image: cmucal/cabot-grafana-server:${CABOT_LAUNCH_IMAGE_TAG:-latest}
+    build:
+      context: docker/server
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-grafana-server
+        platforms:
+          - linux/amd64
+        output:
+          - type=registry
+    profiles:
+      - server
+    ports:
+      - 127.0.0.1:3000:3000
+    networks:
+      - grafana_network
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DATABASE_TYPE
+      - GF_DATABASE_HOST
+      - GF_DATABASE_NAME
+      - GF_DATABASE_USER
+      - GF_DATABASE_PASSWORD
+      - GF_DATABASE_SSL_MODE
+      - GF_DATABASE_CA_CERT_PATH
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    entrypoint: ["/entrypoint.sh"]
+    command:
+      [
+        "grafana",
+        "server",
+        "-homepath",
+        "/usr/share/grafana",
+        "-config",
+        "/etc/grafana/grafana.ini",
+      ]
+
 networks:
   grafana_network:
     name: grafana_network
+
+volumes:
+  grafana-storage:
+

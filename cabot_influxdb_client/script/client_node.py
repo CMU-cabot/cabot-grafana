@@ -23,16 +23,22 @@
 import math
 import rclpy
 from rclpy.node import Node
-from cabot_msgs.msg import PoseLog, Log
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+from rclpy.time import Time
+from cabot_msgs.msg import PoseLog, Log, Anchor
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
-from sensor_msgs.msg import Image, BatteryState
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from sensor_msgs.msg import Image, BatteryState, CompressedImage
 from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
 import base64
+import numpy as np
+import traceback
 
 from cabot_ui import geoutil
 from cabot_ui.cabot_rclpy_util import CaBotRclpyUtil
@@ -87,10 +93,16 @@ class ClientNode(Node):
         super().__init__("client_node")
         CaBotRclpyUtil.initialize(self)
 
+        self.buffer = Buffer()
+        self.listener = TransformListener(self.buffer, self)
+        # listen only tf_static to see the camera rotation
+        # can be replaced with static_only=True arg for TransformListener from K-turtle
+        self.destroy_subscription(self.listener.tf_sub)
+
         self.robot_name = self.declare_parameter("robot_name", "").value
 
         # to debug multiple robot visualization on grafana, just use this line
-        # or set 'CABOT_INFLUXDB_ROBOT_NAME' to a comma separated names like
+        # or set 'CABOT_NAME' to a comma separated names like
         # "cabot1,cabot2,cabot3"
         # self.robot_names = [f"cabot{i}" for i in range(1, 11)]
         self.robot_names = self.robot_name.split(",")
@@ -98,22 +110,12 @@ class ClientNode(Node):
         self.token = self.declare_parameter("token", "").value
         self.org = self.declare_parameter("org", "").value
         self.bucket = self.declare_parameter("bucket", "").value
-        anchor_file = self.declare_parameter("anchor_file", "").value
-        battery_topic = self.declare_parameter("battery_topic", "").value
+        self.anchor = None
         image_left_topic = self.declare_parameter("image_left_topic", "").value
         image_center_topic = self.declare_parameter("image_center_topic", "").value
         image_right_topic = self.declare_parameter("image_right_topic", "").value
         self.get_logger().info(F"image_topics is {image_left_topic}, {image_center_topic}, {image_right_topic}")
-        self.rotate_image = self.declare_parameter("image_rotate", "").value
-        self.rotate_images = self.rotate_image.split(",")
-        self.anchor = None
-        self.get_logger().info(F"Anchor file is {anchor_file}")
-        if anchor_file is not None:
-            temp = geoutil.get_anchor(anchor_file)
-            if temp is not None:
-                self.anchor = temp
-            else:
-                self.get_logger.warn(F"could not load anchor_file \"{anchor_file}\"")
+
         pose_interval = self.declare_parameter("pose_interval", 1.0).value
         cmd_vel_interval = self.declare_parameter("cmd_vel_interval", 0.2).value
         odom_interval = self.declare_parameter("odom_interval", 0.2).value
@@ -131,6 +133,8 @@ class ClientNode(Node):
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
         self.last_error = None
 
+        transient_local_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        self.anchor_sub = self.create_subscription(Anchor, '/anchor', self.anchor_callback, transient_local_qos)
         self.pose_log_sub = self.create_subscription(PoseLog, '/cabot/pose_log', self.pose_log_callback(pose_interval), 10)
         self.cmd_vel_sub = self.create_subscription(Twist, '/cabot/cmd_vel', self.cmd_vel_callback(cmd_vel_interval), 10)
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback(odom_interval), 10)
@@ -154,11 +158,11 @@ class ClientNode(Node):
         self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback(temperature_interval_bme, 'bme', thermometer_position_map['bme']), 10)
 
         if image_left_topic:
-            self.image_left_sub = self.create_subscription(Image, image_left_topic, self.image_callback(image_interval, "left"), 10)
+            self.image_left_sub = self.create_subscription(CompressedImage, image_left_topic, self.image_callback(image_interval, "left"), 10)
         if image_center_topic:
-            self.image_center_sub = self.create_subscription(Image, image_center_topic, self.image_callback(image_interval, "center"), 10)
+            self.image_center_sub = self.create_subscription(CompressedImage, image_center_topic, self.image_callback(image_interval, "center"), 10)
         if image_right_topic:
-            self.image_right_sub = self.create_subscription(Image, image_right_topic, self.image_callback(image_interval, "right"), 10)
+            self.image_right_sub = self.create_subscription(CompressedImage, image_right_topic, self.image_callback(image_interval, "right"), 10)
         self.event_sub = self.create_subscription(Log, '/cabot/activity_log', self.activity_log_callback, 10)
         self.bridge = CvBridge()
 
@@ -172,9 +176,14 @@ class ClientNode(Node):
             self.get_logger().error(f"{e}")
             self.last_error = time.time()
 
+    def anchor_callback(self, anchor):
+        self.anchor = geoutil.Anchor(lat=anchor.lat, lng=anchor.lng, rotate=anchor.rotate)
+
     def pose_log_callback(self, interval):
         @throttle(interval)
         def inner_func(msg):
+            if not self.anchor:
+                return
             orientation = msg.pose.orientation
             (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
             count = 0
@@ -241,6 +250,8 @@ class ClientNode(Node):
         return inner_func
 
     def path_callback(self, msg):
+        if not self.anchor:
+            return
         group = get_nanosec()
         count = 0
         for robot_name in self.robot_names:
@@ -270,9 +281,25 @@ class ClientNode(Node):
 
     def image_callback(self, interval, direction):
         @throttle(interval)
-        def inner_func(msg):
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            if direction in self.rotate_images:
+        def inner_func(msg: CompressedImage):
+            rotate = False
+            try:
+                # msg.header.frame_id is the camera optical frame which is (X-right, Y-down, Z-forward)
+                # ROS2 uses (X-forward, Y-left, Z-up), so the oprical frame is rotated (-PI/2, 0, -PI/2)
+                rotation = self.buffer.lookup_transform("base_link", msg.header.frame_id, Time()).transform.rotation
+                (roll, pitch, yaw) = euler_from_quaternion([rotation.x, rotation.y, rotation.z, rotation.w])
+                # If the camera is attached normally, roll will be -PI/2
+                # If the camera is attached upside down, roll will be +PI/2
+                if roll > 0:
+                    rotate = True
+            except:  # noqa: E722
+                self.get_logger().error(traceback.format_exc())
+                return
+            # self.get_logger().info(f"{msg.header.frame_id=}, {rotate=}, {roll=}, {pitch=}, {yaw=}")
+            # cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            np_arr = np.frombuffer(msg.data, np.uint8)
+            cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if rotate:
                 cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
             cv_image = resize_with_aspect_ratio_cv2(cv_image, 512)
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])

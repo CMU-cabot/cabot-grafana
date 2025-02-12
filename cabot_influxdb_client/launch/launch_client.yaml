@@ -1,23 +1,16 @@
-
 launch:
   - arg:
       name: robot_name
-      default: $(env CABOT_INFLUXDB_ROBOT_NAME cabot)
-  - arg:
-      name: battery_topic
-      default: $(env CABOT_INFLUXDB_BATTERY_TOPIC "/cabot/battery")
+      default: $(env CABOT_NAME cabot)
   - arg:
       name: image_left_topic
-      default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "")
+      default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "/rs3/color/image_raw/compressed")
   - arg:
       name: image_center_topic
-      default: $(env CABOT_INFLUXDB_IMAGE_CENTER_TOPIC "/camera/color/image_raw")
+      default: $(env CABOT_INFLUXDB_IMAGE_CENTER_TOPIC "/rs1/color/image_raw/compressed")
   - arg:
       name: image_right_topic
-      default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "")
-  - arg:
-      name: image_rotate
-      default: $(env CABOT_INFLUXDB_IMAGE_ROTATE "")
+      default: $(env CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC "/rs2/color/image_raw/compressed")
   - arg:
       name: pose_interval
       default: $(env CABOT_INFLUXDB_POSE_INTERVAL 1.0)
@@ -49,20 +42,18 @@ launch:
       name: bucket
       default: $(env CABOT_INFLUXDB_BUCKET cabot)
   - arg:
-      name: anchor_file
-      default: /home/developer/ros2_ws/src/anchor_file.yaml
+      name: use_cpp
+      default: $(env CABOT_INFLUXDB_USE_CPP false)
 
   - node:
       pkg: cabot_influxdb_client
       exec: client_node
       name: client_node
-      param:
+      if: $(var use_cpp)
+      param: &param
         -
           name: robot_name
           value: $(var robot_name)
-        -
-          name: battery_topic
-          value: $(var battery_topic)
         -
           name: image_left_topic
           value: $(var image_left_topic)
@@ -72,9 +63,6 @@ launch:
         -
           name: image_right_topic
           value: $(var image_right_topic)
-        -
-          name: image_rotate
-          value: $(var image_rotate)
         -
           name: pose_interval
           value: $(var pose_interval)
@@ -105,6 +93,10 @@ launch:
         -
           name: bucket
           value: $(var bucket)
-        -
-          name: anchor_file
-          value: $(var anchor_file)
+
+  - node:
+      pkg: cabot_influxdb_client
+      exec: client_node.py
+      name: client_node
+      unless: $(var use_cpp)
+      param: *param

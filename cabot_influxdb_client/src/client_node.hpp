@@ -29,6 +29,7 @@
 #include <cmath>
 #include <ctime>
 #include <chrono>
+#include <csignal>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -42,6 +43,7 @@
 #include <boost/algorithm/string.hpp>
 #include <cabot_msgs/msg/log.hpp>
 #include <cabot_msgs/msg/pose_log.hpp>
+#include <cabot_msgs/msg/anchor.hpp>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
@@ -53,12 +55,11 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/parameter.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <InfluxDB/InfluxDB.h>
-#include <InfluxDB/InfluxDBFactory.h>
-#include <InfluxDB/InfluxDBBuilder.h>
-#include <InfluxDB/Point.h>
+#include "InfluxDB.hpp"
+#include "InfluxPoint.hpp"
 #include "cabot_rclcpp_util.hpp"
 #include "geoutil.hpp"
 
@@ -99,6 +100,7 @@ class ClientNode : public rclcpp::Node
 {
 public:
   ClientNode();
+  virtual ~ClientNode();
 
 private:
   std::string robot_name_;
@@ -107,11 +109,14 @@ private:
   std::string org_;
   std::string bucket_;
   std::string anchor_file_;
-  std::string battery_topic_;
   std::string image_left_topic_;
   std::string image_center_topic_;
   std::string image_right_topic_;
-  std::unique_ptr<influxdb::InfluxDB> influxdb_;
+  std::string rotate_image_;
+  std::vector<std::string> rotate_images_;
+  std::vector<std::string> split_string(const std::string &str, char delimiter);
+
+  InfluxDB client_;
   Anchor anchor_;
   double anchor_rotate_;
   Throttle throttle_;
@@ -129,6 +134,7 @@ private:
   std::shared_ptr<Throttle> image_left_throttle_;
   std::shared_ptr<Throttle> image_center_throttle_;
   std::shared_ptr<Throttle> image_right_throttle_;
+  rclcpp::Subscription<cabot_msgs::msg::Anchor>::SharedPtr anchor_sub_;
   rclcpp::Subscription<cabot_msgs::msg::PoseLog>::SharedPtr pose_log_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -138,10 +144,13 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_left_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_center_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_right_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_left_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_center_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_right_sub_;
+
   rclcpp::Subscription<cabot_msgs::msg::Log>::SharedPtr event_sub_;
   int64_t last_error_;
 
-  void send_point(influxdb::Point && point);
   std::chrono::time_point<std::chrono::system_clock> get_nanosec(const rclcpp::Time & stamp);
   void euler_from_quaternion(
     const geometry_msgs::msg::Quaternion & q, double & roll,
@@ -153,6 +162,9 @@ private:
   void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
   void battery_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
   void image_callback(const sensor_msgs::msg::Image::SharedPtr msg, const std::string & direction);
+  void compressed_image_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg, const std::string & direction);
+  cv::Mat resize_with_aspect_ratio(const cv::Mat& image, int target_size);
+  cv::Mat rotate_image(const cv::Mat& image, const std::string& direction);
   std::string base64_encode(const std::vector<uchar>& data);
   void activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg);
 

@@ -9,6 +9,4 @@ if [[ ! -z $(docker ps -f "name=$project*" -q -a) ]]; then
 fi
 
 rm -rf influxdb/*
-rm -rf grafanadb/*
-rm -rf grafana/data/*
-rm -f grafanaconfig/api-key.txt
+docker compose down grafana-server -v

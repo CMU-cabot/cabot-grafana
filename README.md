@@ -30,10 +30,9 @@
 ```
 CABOT_NAME          # robot name like cabot1               (default cabot)
 CABOT_INFLUXDB_BATTERY_TOPIC       # battery topic name                   (default /cabot/battery)
-CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default "")
-CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera              (default /camera/color/image_raw)
-CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera               (default "")
-CABOT_INFLUXDB_IMAGE_ROTATE        # select image rotate from [left,...]  (default "")
+CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default /rs3/color/image_raw/compressed)
+CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera              (default /rs1/color/image_raw/compressed)
+CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera               (default /rs2/color/image_raw/compressed)
 CABOT_INFLUXDB_POSE_INTERVAL       # <float> interval for pose            (default 1.0)
 CABOT_INFLUXDB_CMD_VEL_INTERVAL    # <float> interval for cmd vel         (default 0.2)
 CABOT_INFLUXDB_ODOM_INTERVAL       # <float> interval for odom            (default 0.2)
@@ -44,7 +43,7 @@ CABOT_INFLUXDB_HOST                # host including http/https and port   (defau
 CABOT_INFLUXDB_TOKEN               # token                                (default a54a87f7-73a0-4534-9741-ad7ff4e7d111  - development default)
 CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
 CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
-CABOT_INFLUXDB_USE_CPP             # use cpp implementation if true
+CABOT_INFLUXDB_USE_CPP             # use cpp implementation if true (TODO: needs to implement image rotation by TF)
 
 
 GF_DATABASE_TYPE                   # database type (e.g., mysql)

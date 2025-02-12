@@ -24,17 +24,21 @@ import math
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+from rclpy.time import Time
 from cabot_msgs.msg import PoseLog, Log, Anchor
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from tf_transformations import euler_from_quaternion
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from sensor_msgs.msg import Image, BatteryState, CompressedImage
 from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
 import base64
 import numpy as np
+import traceback
 
 from cabot_ui import geoutil
 from cabot_ui.cabot_rclpy_util import CaBotRclpyUtil
@@ -89,6 +93,12 @@ class ClientNode(Node):
         super().__init__("client_node")
         CaBotRclpyUtil.initialize(self)
 
+        self.buffer = Buffer()
+        self.listener = TransformListener(self.buffer, self)
+        # listen only tf_static to see the camera rotation
+        # can be replaced with static_only=True arg for TransformListener from K-turtle
+        self.destroy_subscription(self.listener.tf_sub)
+
         self.robot_name = self.declare_parameter("robot_name", "").value
 
         # to debug multiple robot visualization on grafana, just use this line
@@ -106,8 +116,6 @@ class ClientNode(Node):
         image_center_topic = self.declare_parameter("image_center_topic", "").value
         image_right_topic = self.declare_parameter("image_right_topic", "").value
         self.get_logger().info(F"image_topics is {image_left_topic}, {image_center_topic}, {image_right_topic}")
-        self.rotate_image = self.declare_parameter("image_rotate", "").value
-        self.rotate_images = self.rotate_image.split(",")
 
         pose_interval = self.declare_parameter("pose_interval", 1.0).value
         cmd_vel_interval = self.declare_parameter("cmd_vel_interval", 0.2).value
@@ -275,10 +283,24 @@ class ClientNode(Node):
     def image_callback(self, interval, direction):
         @throttle(interval)
         def inner_func(msg: CompressedImage):
-            #cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            rotate = False
+            try:
+                # msg.header.frame_id is the camera optical frame which is (X-right, Y-down, Z-forward)
+                # ROS2 uses (X-forward, Y-left, Z-up), so the oprical frame is rotated (-PI/2, 0, -PI/2)
+                rotation = self.buffer.lookup_transform("base_link", msg.header.frame_id, Time()).transform.rotation
+                (roll, pitch, yaw) = euler_from_quaternion([rotation.x, rotation.y, rotation.z, rotation.w])
+                # If the camera is attached normally, roll will be -PI/2
+                # If the camera is attached upside down, roll will be +PI/2
+                if roll > 0:
+                    rotate = True
+            except:  # noqa: E722
+                self.get_logger().error(traceback.format_exc())
+                return
+            # self.get_logger().info(f"{msg.header.frame_id=}, {rotate=}, {roll=}, {pitch=}, {yaw=}")
+            # cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
             np_arr = np.frombuffer(msg.data, np.uint8)
             cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            if direction in self.rotate_images:
+            if rotate:
                 cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
             cv_image = resize_with_aspect_ratio_cv2(cv_image, 512)
             retval, buffer = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])

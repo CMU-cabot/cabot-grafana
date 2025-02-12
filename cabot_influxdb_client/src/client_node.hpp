@@ -109,7 +109,6 @@ private:
   std::string org_;
   std::string bucket_;
   std::string anchor_file_;
-  std::string battery_topic_;
   std::string image_left_topic_;
   std::string image_center_topic_;
   std::string image_right_topic_;

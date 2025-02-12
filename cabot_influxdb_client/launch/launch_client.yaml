@@ -3,9 +3,6 @@ launch:
       name: robot_name
       default: $(env CABOT_NAME cabot)
   - arg:
-      name: battery_topic
-      default: $(env CABOT_INFLUXDB_BATTERY_TOPIC "/cabot/battery")
-  - arg:
       name: image_left_topic
       default: $(env CABOT_INFLUXDB_IMAGE_LEFT_TOPIC "/rs3/color/image_raw/compressed")
   - arg:
@@ -57,9 +54,6 @@ launch:
         -
           name: robot_name
           value: $(var robot_name)
-        -
-          name: battery_topic
-          value: $(var battery_topic)
         -
           name: image_left_topic
           value: $(var image_left_topic)

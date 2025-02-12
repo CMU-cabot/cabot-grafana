@@ -29,7 +29,6 @@
 
 ```
 CABOT_NAME          # robot name like cabot1               (default cabot)
-CABOT_INFLUXDB_BATTERY_TOPIC       # battery topic name                   (default /cabot/battery)
 CABOT_INFLUXDB_IMAGE_LEFT_TOPIC    # topic for left camera                (default /rs3/color/image_raw/compressed)
 CABOT_INFLUXDB_IMAGE_CENTER_TOPIC  # topic for center camera              (default /rs1/color/image_raw/compressed)
 CABOT_INFLUXDB_IMAGE_RIGHT_TOPIC   # topic for right camera               (default /rs2/color/image_raw/compressed)

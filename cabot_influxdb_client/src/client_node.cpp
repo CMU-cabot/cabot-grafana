@@ -34,7 +34,6 @@ ClientNode::ClientNode()
   client_(host_, token_, org_, bucket_)
 {
   robot_name_ = this->declare_parameter<std::string>("robot_name", "");
-  battery_topic_ = this->declare_parameter<std::string>("battery_topic", "");
   image_left_topic_ = this->declare_parameter<std::string>("image_left_topic", "");
   image_center_topic_ = this->declare_parameter<std::string>("image_center_topic", "");
   image_right_topic_ = this->declare_parameter<std::string>("image_right_topic", "");
@@ -86,7 +85,7 @@ ClientNode::ClientNode()
       this->ClientNode::path_callback(msg);
     });
   battery_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
-    battery_topic_, 10, [this](const sensor_msgs::msg::BatteryState::SharedPtr msg) {
+    "/battery_state", 10, [this](const sensor_msgs::msg::BatteryState::SharedPtr msg) {
       battery_throttle_->call(&ClientNode::battery_callback, this, msg);
     });
 /*

@@ -111,7 +111,6 @@ class ClientNode(Node):
         self.org = self.declare_parameter("org", "").value
         self.bucket = self.declare_parameter("bucket", "").value
         self.anchor = None
-        battery_topic = self.declare_parameter("battery_topic", "").value
         image_left_topic = self.declare_parameter("image_left_topic", "").value
         image_center_topic = self.declare_parameter("image_center_topic", "").value
         image_right_topic = self.declare_parameter("image_right_topic", "").value

@@ -43,7 +43,7 @@ CABOT_INFLUXDB_DIAG_AGG_INTERVAL   # <float> interval for diagnostics agg (defau
 CABOT_INFLUXDB_BATTERY_INTERVAL    # <float> interval for battery         (default 1.0)
 CABOT_INFLUXDB_IMAGE_INTERVAL      # <float> interval for image           (default 5.0)
 CABOT_INFLUXDB_HOST                # host including http/https and port   (default http://localhost:8086)
-CABOT_INFLUXDB_TOKEN               # token                                (default a54a87f7-73a0-4534-9741-ad7ff4e7d111  - development default)
+CABOT_INFLUXDB_TOKEN               # token                                (default please-replace-with-an-influxdb-token  - development default)
 CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
 CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
 CABOT_INFLUXDB_USE_CPP             # use cpp implementation if true (TODO: needs to implement image rotation by TF)

@@ -54,7 +54,7 @@ launch:
       default: $(env CABOT_INFLUXDB_HOST http://localhost:8086)
   - arg:
       name: token
-      default: $(env CABOT_INFLUXDB_TOKEN a54a87f7-73a0-4534-9741-ad7ff4e7d111)
+      default: $(env CABOT_INFLUXDB_TOKEN please-replace-with-an-influxdb-token)
   - arg:
       name: org
       default: $(env CABOT_INFLUXDB_ORG cabot)

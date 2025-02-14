@@ -96,3 +96,7 @@ open [http://localhost:3000](http://localhost:3000) - admin/admin
 - If you change grafana server (origin / forked), you may need to delete `grafanadb` content and `grafanaconfig/api-key.txt` and start with `-i` option again
 
 - `./clean.sh` to clean all the servers and data and launch from initialization
+
+## License
+
+MIT License

@@ -1,5 +1,9 @@
 # cabot-grafana
 
+This repository provides a grafana dashboard and a client for the robot which upload telemetry to influxdb.
+Grafana dashboard connects to the influxdb to visualize robot status.
+
+
 ## prerequisite
 
 - jq
@@ -43,8 +47,16 @@ CABOT_INFLUXDB_TOKEN               # token                                (defau
 CABOT_INFLUXDB_ORG                 # org                                  (default cabot)
 CABOT_INFLUXDB_BUCKET              # bucket                               (default cabot)
 CABOT_INFLUXDB_USE_CPP             # use cpp implementation if true (TODO: needs to implement image rotation by TF)
+```
+
+## debug multiple robot grafana visualization with a single client
+- set `CABOT_NAME` to comma separated names such as `cabot1,cabot2,cabot3`
+  - The client will generate fake data for each robot name
+  - Robot location will be shifted towards North East direction
 
 
+## Development with local grafana/influxdb server
+```
 GF_DATABASE_TYPE                   # database type (e.g., mysql)
 GF_DATABASE_HOST                   # database host (e.g., your-azure-mysql-host.mysql.database.azure.com)
 GF_DATABASE_NAME                   # database name (e.g., grafana)
@@ -56,11 +68,6 @@ GF_DATABASE_CA_CERT_PATH           # path to CA certificate (e.g., /etc/ssl/cert
 GRAFANA_HOST                       # grafana host for export/import dashboard
 GRAFANA_API_KEY                    # grafana api key
 ```
-
-## debug multiple robot grafana visualization with a single client
-- set `CABOT_NAME` to comma separated names such as `cabot1,cabot2,cabot3`
-  - The client will generate fake data for each robot name
-  - Robot location will be shifted towards North East direction
 
 ## launch local grafana(modified)/influxDB for development
 - There is [a fork of grafana in CMU-cabot](https://github.com/CMU-cabot/grafana), which is modified for visualizing multiple path in a Geomap layer

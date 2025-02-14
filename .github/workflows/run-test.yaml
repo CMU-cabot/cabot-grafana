@@ -31,9 +31,9 @@ jobs:
     - name: Prepare thirdparty repos
       run: ./setup-dependency.sh
 
-    - name: Build images 
+    - name: Pull images
       shell: bash
-      run: ./bake-docker.sh -i influxdb-client
+      run: docker pull cmucal/cabot-influxdb-client:latest
 
     - name: Run unittest
       shell: bash

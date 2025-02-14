@@ -1,24 +1,24 @@
-/*******************************************************************************
- * Copyright (c) 2024  Carnegie Mellon University and Miraikan
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *******************************************************************************/
+//
+// Copyright (c) 2024  Carnegie Mellon University and Miraikan
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
 
 #include "client_node.hpp"
 #include "geoutil.hpp"
@@ -106,7 +106,7 @@ ClientNode::ClientNode()
       });
   }
 */
-  if(!image_left_topic_.empty()){
+  if (!image_left_topic_.empty()) {
     compressed_image_left_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
       image_left_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
         image_left_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "left");
@@ -116,7 +116,7 @@ ClientNode::ClientNode()
     image_center_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
       image_center_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "center");
     });
-  if(!image_right_topic_.empty()){
+  if (!image_right_topic_.empty()) {
     compressed_image_right_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
       image_right_topic_, 10, [this](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
         image_right_throttle_->call(&ClientNode::compressed_image_callback, this, msg, "right");
@@ -128,12 +128,14 @@ ClientNode::ClientNode()
     });
 }
 
-ClientNode::~ClientNode() {
+ClientNode::~ClientNode()
+{
   RCLCPP_INFO(this->get_logger(), "Shutting down ClientNode and releasing recources");
-  //cleanup();
+  // cleanup();
 }
 
-void signal_handler(int signal) {
+void signal_handler(int signal)
+{
   if (node_) {
     RCLCPP_INFO(node_->get_logger(), "Signal received: %d, shutting down...", signal);
     cleanup();
@@ -192,11 +194,11 @@ void ClientNode::pose_log_callback(const cabot_msgs::msg::PoseLog::SharedPtr msg
 
     InfluxPoint point{"pose_data"};
     point.addField("lat", msg->lat)
-         .addField("lng", msg->lng)
-         .addField("floor", msg->floor)
-         .addField("yaw", -anchor_.rotate - yaw / M_PI * 180)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(rclcpp::Time()));
+    .addField("lng", msg->lng)
+    .addField("floor", msg->floor)
+    .addField("yaw", -anchor_.rotate - yaw / M_PI * 180)
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(rclcpp::Time()));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
@@ -211,9 +213,9 @@ void ClientNode::cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg
   try {
     InfluxPoint point{"cmd_vel"};
     point.addField("linear", msg->linear.x)
-         .addField("angular", msg->angular.z)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(rclcpp::Time()));
+    .addField("angular", msg->angular.z)
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(rclcpp::Time()));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
@@ -228,9 +230,9 @@ void ClientNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   try {
     InfluxPoint point{"odometry"};
     point.addField("linear", msg->twist.twist.linear.x)
-         .addField("angular", msg->twist.twist.angular.z)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(msg->header.stamp));
+    .addField("angular", msg->twist.twist.angular.z)
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(msg->header.stamp));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
@@ -270,9 +272,9 @@ void ClientNode::diagnostics_callback(const diagnostic_msgs::msg::DiagnosticArra
       int level = diagnostic->second;
       InfluxPoint point{"diagnostic"};
       point.addField("level", level)
-           .addTag("name", name)
-           .addTag("robot_name", robot_name_)
-           .setTimestamp(get_nanosec(rclcpp::Time()));
+      .addTag("name", name)
+      .addTag("robot_name", robot_name_)
+      .setTimestamp(get_nanosec(rclcpp::Time()));
       std::string lineProtocol = point.toLineProtocol();
       if (!client_.sendData(lineProtocol)) {
         throw std::runtime_error("Failed to send data to InfluxDB");
@@ -299,11 +301,11 @@ void ClientNode::path_callback(const nav_msgs::msg::Path::SharedPtr msg)
       std::string lat = std::to_string(globalp.lat);
       std::string lng = std::to_string(globalp.lng);
       InfluxPoint point{"plan"};
-      point.addField("lat", globalp.lat) // Use string format of lat on localhost
-           .addField("lng", globalp.lng) // use string format of lng on localhost
-           .addField("group", static_cast<int64_t>(epoch))
-           .addTag("robot_name", robot_name_)
-           .setTimestamp(get_nanosec(rclcpp::Time()));     // need to put point in different time
+      point.addField("lat", globalp.lat)  // Use string format of lat on localhost
+      .addField("lng", globalp.lng)       // use string format of lng on localhost
+      .addField("group", static_cast<int64_t>(epoch))
+      .addTag("robot_name", robot_name_)
+      .setTimestamp(get_nanosec(rclcpp::Time()));          // need to put point in different time
       std::string lineProtocol = point.toLineProtocol();
       if (!client_.sendData(lineProtocol)) {
         throw std::runtime_error("Failed to send data to InfluxDB");
@@ -319,13 +321,13 @@ void ClientNode::battery_callback(const sensor_msgs::msg::BatteryState::SharedPt
   try {
     InfluxPoint point{"battery"};
     point.addField("percentage", msg->percentage * 100.0)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(msg->header.stamp));
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(msg->header.stamp));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
     }
-    //RCLCPP_INFO(this->get_logger(), "get battery: %.2f", msg->percentage);
+    // RCLCPP_INFO(this->get_logger(), "get battery: %.2f", msg->percentage);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to get battery: %s", e.what());
   }
@@ -342,10 +344,10 @@ void ClientNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg, co
     std::string jpg_as_text = base64_encode(buf);
     InfluxPoint point{"image"};
     point.addField("data", jpg_as_text)
-         .addTag("format", "jpeg")
-         .addTag("direction", direction)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(msg->header.stamp));
+    .addTag("format", "jpeg")
+    .addTag("direction", direction)
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(msg->header.stamp));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
@@ -360,7 +362,7 @@ void ClientNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg, co
 void ClientNode::compressed_image_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg, const std::string & direction)
 {
   try {
-    //cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    // cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     cv::Mat compressed_image = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
     cv::Mat resized_image = resize_with_aspect_ratio(compressed_image, 512);
     cv::Mat rotated_image = rotate_image(resized_image, direction);
@@ -369,10 +371,10 @@ void ClientNode::compressed_image_callback(const sensor_msgs::msg::CompressedIma
     std::string jpg_as_text = base64_encode(buf);
     InfluxPoint point{"image"};
     point.addField("data", jpg_as_text)
-         .addTag("format", "jpeg")
-         .addTag("direction", direction)
-         .addTag("robot_name", robot_name_)
-         .setTimestamp(get_nanosec(msg->header.stamp));
+    .addTag("format", "jpeg")
+    .addTag("direction", direction)
+    .addTag("robot_name", robot_name_)
+    .setTimestamp(get_nanosec(msg->header.stamp));
     std::string lineProtocol = point.toLineProtocol();
     if (!client_.sendData(lineProtocol)) {
       throw std::runtime_error("Failed to send data to InfluxDB");
@@ -384,26 +386,28 @@ void ClientNode::compressed_image_callback(const sensor_msgs::msg::CompressedIma
   }
 }
 
-cv::Mat ClientNode::resize_with_aspect_ratio(const cv::Mat& image, int target_size) {
+cv::Mat ClientNode::resize_with_aspect_ratio(const cv::Mat & image, int target_size)
+{
   int original_width = image.cols;
   int original_height = image.rows;
   int new_width, new_height;
-    if (original_width > original_height) {
-      new_width = target_size;
-      new_height = static_cast<int>((static_cast<double>(target_size) / original_width) * original_height);
-    } else {
-      new_height = target_size;
-      new_width = static_cast<int>((static_cast<double>(target_size) / original_height) * original_width);
-    }
+  if (original_width > original_height) {
+    new_width = target_size;
+    new_height = static_cast<int>((static_cast<double>(target_size) / original_width) * original_height);
+  } else {
+    new_height = target_size;
+    new_width = static_cast<int>((static_cast<double>(target_size) / original_height) * original_width);
+  }
   cv::Mat resized_image;
   cv::resize(image, resized_image, cv::Size(new_width, new_height), 0, 0, cv::INTER_AREA);
   return resized_image;
 }
 
-cv::Mat ClientNode::rotate_image(const cv::Mat& image, const std::string& direction) {
+cv::Mat ClientNode::rotate_image(const cv::Mat & image, const std::string & direction)
+{
   bool rotate = false;
-  for (const auto& dir : this->rotate_images_) {
-    if (dir ==direction) {
+  for (const auto & dir : this->rotate_images_) {
+    if (dir == direction) {
       rotate = true;
       break;
     }
@@ -415,7 +419,8 @@ cv::Mat ClientNode::rotate_image(const cv::Mat& image, const std::string& direct
   return rotated_image;
 }
 
-std::vector<std::string> ClientNode::split_string(const std::string &str, char delimiter) {
+std::vector<std::string> ClientNode::split_string(const std::string & str, char delimiter)
+{
   std::vector<std::string> tokens;
   std::stringstream ss(str);
   std::string item;
@@ -425,7 +430,7 @@ std::vector<std::string> ClientNode::split_string(const std::string &str, char d
   return tokens;
 }
 
-std::string ClientNode::base64_encode(const std::vector<uchar>& data)
+std::string ClientNode::base64_encode(const std::vector<uchar> & data)
 {
   static const char encode_table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -460,32 +465,31 @@ void ClientNode::activity_log_callback(const cabot_msgs::msg::Log::SharedPtr msg
       msg->header.stamp.sec, msg->header.stamp.nanosec, msg->header.frame_id.c_str(),
       msg->category.c_str(), msg->text.c_str(), msg->memo.c_str());
     if (msg->category == "tour-text") {
-
       InfluxPoint point{"tour"};
       point.addField("data", msg->text)
-           .addTag("robot_name", robot_name_)
-           .setTimestamp(get_nanosec(msg->header.stamp));
+      .addTag("robot_name", robot_name_)
+      .setTimestamp(get_nanosec(msg->header.stamp));
       try {
-          std::string lineProtocol = point.toLineProtocol();
-          if (!client_.sendData(lineProtocol)) {
-              throw std::runtime_error("Failed to send data to InfluxDB");
-          }
-      } catch (const std::exception& e) {
-          RCLCPP_ERROR(this->get_logger(), "Failed to get activity log: %s", e.what());
+        std::string lineProtocol = point.toLineProtocol();
+        if (!client_.sendData(lineProtocol)) {
+          throw std::runtime_error("Failed to send data to InfluxDB");
+        }
+      } catch (const std::exception & e) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to get activity log: %s", e.what());
       }
     }
     if (msg->category == "destination-text") {
       InfluxPoint point{"destination"};
       point.addField("data", msg->text)
-           .addTag("robot_name", robot_name_)
-           .setTimestamp(get_nanosec(msg->header.stamp));
+      .addTag("robot_name", robot_name_)
+      .setTimestamp(get_nanosec(msg->header.stamp));
       try {
-          std::string lineProtocol = point.toLineProtocol();
-          if (!client_.sendData(lineProtocol)) {
-              throw std::runtime_error("Failed to send data to InfluxDB");
-          }
-      } catch (const std::exception& e) {
-          RCLCPP_ERROR(this->get_logger(), "Failed to get activity log: %s", e.what());
+        std::string lineProtocol = point.toLineProtocol();
+        if (!client_.sendData(lineProtocol)) {
+          throw std::runtime_error("Failed to send data to InfluxDB");
+        }
+      } catch (const std::exception & e) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to get activity log: %s", e.what());
       }
     }
   } catch (const std::exception & e) {

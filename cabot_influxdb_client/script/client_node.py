@@ -28,11 +28,11 @@ from rclpy.time import Time
 from cabot_msgs.msg import PoseLog, Log, Anchor
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path, Odometry
-from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
+from diagnostic_msgs.msg import DiagnosticArray
 from tf_transformations import euler_from_quaternion
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from sensor_msgs.msg import Image, BatteryState, CompressedImage
+from sensor_msgs.msg import BatteryState, CompressedImage
 from sensor_msgs.msg import Temperature
 from cv_bridge import CvBridge
 import cv2
@@ -45,9 +45,7 @@ from cabot_ui.cabot_rclpy_util import CaBotRclpyUtil
 
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
-from datetime import datetime
 import time
-import sys
 
 
 def throttle(interval_seconds):
@@ -60,6 +58,7 @@ def throttle(interval_seconds):
     """
     def decorator(func):
         last_called = [0]  # Use a mutable object to allow modification in nested scope
+
         def wrapper(*args, **kwargs):
             nonlocal last_called
             current_time = time.time()
@@ -85,8 +84,9 @@ def resize_with_aspect_ratio_cv2(image, target_size):
     else:
         new_height = target_size
         new_width = int((target_size / original_height) * original_width)
-    resized_image =cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
     return resized_image
+
 
 class ClientNode(Node):
     def __init__(self):
@@ -143,18 +143,18 @@ class ClientNode(Node):
         self.battery_sub = self.create_subscription(BatteryState, '/battery_state', self.battery_callback(battery_interval), 10)
 
         thermometer_position_map = {
-                '1'  : "Exhaust",
-                '2'  : "Behind LiDAR",
-                '3'  : "In the center of the three FRAMOSes",
-                '4'  : "Center of the suit case",
-                '5'  : "Lower intake",
-                'bme': "Upper intake"
-                }
-        self.temperature_log_sub1 = self.create_subscription(Temperature,    '/cabot/temperature1',    self.temp_log_callback(temperature_interval1, '1', thermometer_position_map['1']), 10)
-        self.temperature_log_sub2 = self.create_subscription(Temperature,    '/cabot/temperature2',    self.temp_log_callback(temperature_interval2, '2', thermometer_position_map['2']), 10)
-        self.temperature_log_sub3 = self.create_subscription(Temperature,    '/cabot/temperature3',    self.temp_log_callback(temperature_interval3, '3', thermometer_position_map['3']), 10)
-        self.temperature_log_sub4 = self.create_subscription(Temperature,    '/cabot/temperature4',    self.temp_log_callback(temperature_interval4, '4', thermometer_position_map['4']), 10)
-        self.temperature_log_sub5 = self.create_subscription(Temperature,    '/cabot/temperature5',    self.temp_log_callback(temperature_interval5, '5', thermometer_position_map['5']), 10)
+            '1': "Exhaust",
+            '2': "Behind LiDAR",
+            '3': "In the center of the three FRAMOSes",
+            '4': "Center of the suit case",
+            '5': "Lower intake",
+            'bme': "Upper intake"
+        }
+        self.temperature_log_sub1 = self.create_subscription(Temperature, '/cabot/temperature1', self.temp_log_callback(temperature_interval1, '1', thermometer_position_map['1']), 10)
+        self.temperature_log_sub2 = self.create_subscription(Temperature, '/cabot/temperature2', self.temp_log_callback(temperature_interval2, '2', thermometer_position_map['2']), 10)
+        self.temperature_log_sub3 = self.create_subscription(Temperature, '/cabot/temperature3', self.temp_log_callback(temperature_interval3, '3', thermometer_position_map['3']), 10)
+        self.temperature_log_sub4 = self.create_subscription(Temperature, '/cabot/temperature4', self.temp_log_callback(temperature_interval4, '4', thermometer_position_map['4']), 10)
+        self.temperature_log_sub5 = self.create_subscription(Temperature, '/cabot/temperature5', self.temp_log_callback(temperature_interval5, '5', thermometer_position_map['5']), 10)
         self.temperature_log_sub_bme = self.create_subscription(Temperature, '/cabot/bme/temperature', self.temp_log_callback(temperature_interval_bme, 'bme', thermometer_position_map['bme']), 10)
 
         if image_left_topic:
@@ -170,7 +170,7 @@ class ClientNode(Node):
         # prevent too much connection errors
         if self.last_error and time.time() - self.last_error < 1.0:
             return
-        try :
+        try:
             self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         except Exception as e:
             self.get_logger().error(f"{e}")
@@ -192,13 +192,12 @@ class ClientNode(Node):
                     .field("lat", msg.lat + 0.0005 * count) \
                     .field("lng", msg.lng + 0.0005 * count) \
                     .field("floor", msg.floor) \
-                    .field("yaw", - self.anchor.rotate - yaw/math.pi*180) \
+                    .field("yaw", - self.anchor.rotate - yaw / math.pi * 180) \
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
                 count += 1
         return inner_func
-
 
     def cmd_vel_callback(self, interval):
         @throttle(interval)
@@ -266,7 +265,7 @@ class ClientNode(Node):
                     .tag("robot_name", robot_name) \
                     .time(get_nanosec(), WritePrecision.NS)  # need to put point in different time
                 self.send_point(point)
-            count+=1
+            count += 1
 
     def battery_callback(self, interval):
         @throttle(interval)
@@ -338,11 +337,12 @@ class ClientNode(Node):
                     .field("value", msg.temperature) \
                     .tag("robot_name", robot_name) \
                     .tag("position", position) \
-                    .tag("position_description",position_description) \
+                    .tag("position_description", position_description) \
                     .tag("unit", "celsius") \
                     .time(get_nanosec(), WritePrecision.NS)
                 self.send_point(point)
         return inner_func
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -350,6 +350,7 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

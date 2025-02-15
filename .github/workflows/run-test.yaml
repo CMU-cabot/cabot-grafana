@@ -40,4 +40,5 @@ jobs:
       run:  |
              export HOST_UID=$(id -u)
              export HOST_GID=$(id -g)
-             docker compose run --rm influxdb-client-dev ./unittest.sh -b -a
+             tree .
+             docker compose run --rm influxdb-client-dev bash -c "./unittest.sh -b -a"

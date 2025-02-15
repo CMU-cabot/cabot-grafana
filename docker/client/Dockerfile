@@ -84,7 +84,7 @@ COPY --from=cache /tmp/opt/src $UNDERLAY_WS/src
 COPY ros_entrypoint.sh /ros_entrypoint.sh
 
 RUN apt update && \
-    apt install -y gosu tree \
+    apt install -y gosu \
     && \	
     rm -rf /var/lib/apt/lists/*
 

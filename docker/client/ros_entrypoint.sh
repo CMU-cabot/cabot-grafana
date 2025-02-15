@@ -23,5 +23,5 @@ fi
 
 # Source ROS setup script
 source "/opt/underlay_ws/install/setup.bash"
-
+echo $HOST_UID, $CONT_UID
 exec gosu developer "$@"

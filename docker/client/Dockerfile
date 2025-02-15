@@ -83,6 +83,11 @@ COPY --from=cache $UNDERLAY_WS/install $UNDERLAY_WS/install
 COPY --from=cache /tmp/opt/src $UNDERLAY_WS/src
 COPY ros_entrypoint.sh /ros_entrypoint.sh
 
+RUN apt update && \
+    apt install -y gosu tree \
+    && \	
+    rm -rf /var/lib/apt/lists/*
+
 ### make user environment
 
 ENV USERNAME developer
@@ -91,14 +96,12 @@ ARG UID=1000
 RUN useradd -m $USERNAME && \
         echo "$USERNAME:$USERNAME" | chpasswd && \
         usermod --shell /bin/bash $USERNAME && \
-    usermod -aG sudo $USERNAME && \
+        usermod -aG sudo $USERNAME && \
         mkdir -p /etc/sudoers.d/ && \
         echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME && \
         chmod 0440 /etc/sudoers.d/$USERNAME && \
         usermod  --uid $UID $USERNAME && \
         groupmod --gid $UID $USERNAME
-
-USER $USERNAME
 
 ENV HOME /home/$USERNAME
 

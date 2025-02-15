@@ -17,6 +17,9 @@ services:
       - build
     network_mode: host  # to communicate with other ROS2 node
     environment:
+      - HOST_UID
+      - HOST_GID
+      - HOST_TZ
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
       - CABOT_NAME
       - CABOT_INFLUXDB_IMAGE_LEFT_TOPIC

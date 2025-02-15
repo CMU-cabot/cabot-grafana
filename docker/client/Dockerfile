@@ -81,7 +81,7 @@ WORKDIR $UNDERLAY_WS
 COPY --from=cache $UNDERLAY_WS/install $UNDERLAY_WS/install
 # copy package.xml files from cache
 COPY --from=cache /tmp/opt/src $UNDERLAY_WS/src
-RUN sed -i 's:ros/$ROS_DISTRO:underlay_ws/install:' /ros_entrypoint.sh
+COPY ros_entrypoint.sh /ros_entrypoint.sh
 
 ### make user environment
 

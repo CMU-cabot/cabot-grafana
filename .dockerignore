@@ -2,3 +2,4 @@
 !cabot_influxdb_client
 !cabot-common/cabot_msgs
 !docker/home/ros2_ws/launch.sh
+!docker/client/ros_entrypoint.sh

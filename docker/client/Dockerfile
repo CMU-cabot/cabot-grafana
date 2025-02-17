@@ -74,13 +74,6 @@ RUN sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ | sudo tee /
 
 ARG ROS_DISTRO
 
-ENV UNDERLAY_WS=/opt/underlay_ws
-
-WORKDIR $UNDERLAY_WS
-
-COPY --from=cache $UNDERLAY_WS/install $UNDERLAY_WS/install
-# copy package.xml files from cache
-COPY --from=cache /tmp/opt/src $UNDERLAY_WS/src
 COPY ros_entrypoint.sh /ros_entrypoint.sh
 
 RUN apt update && \
@@ -106,7 +99,12 @@ RUN useradd -m $USERNAME && \
 ENV HOME /home/$USERNAME
 
 RUN mkdir $HOME/ros2_ws
-
 WORKDIR $HOME/ros2_ws
 
+ENV UNDERLAY_WS=/opt/underlay_ws
+ENV ROS2_WS=/home/developer/ros2_ws
+
+COPY --from=cache $UNDERLAY_WS/install $ROS2_WS/install
+# copy package.xml files from cache
+COPY --from=cache /tmp/opt/src $ROS2_WS/src
 COPY --from=cabot_src ./docker/home/ros2_ws/launch.sh $HOME/ros2_ws/launch.sh

@@ -22,6 +22,6 @@ if [[ $CONT_UID -ne $HOST_UID ]] || [[ $CONT_GID -ne $HOST_GID ]]; then
 fi
 
 # Source ROS setup script
-source "/opt/underlay_ws/install/setup.bash"
+source "/opt/ros/$ROS_DISTRO/setup.bash"
 echo $HOST_UID, $CONT_UID
 exec gosu developer "$@"

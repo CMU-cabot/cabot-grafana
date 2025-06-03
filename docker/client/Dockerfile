@@ -1,4 +1,9 @@
-FROM ros:humble AS base
+ARG BASE_IMAGE=cabot-base
+ARG FROM_IMAGE=cmucal/${BASE_IMAGE}:humble-base
+
+FROM ${FROM_IMAGE} AS base
+
+ARG TARGETARCH
 
 RUN apt update && apt install --no-install-recommends -y \
     curl \
@@ -8,6 +13,16 @@ RUN apt update && apt install --no-install-recommends -y \
     ros-humble-cv-bridge \
     && \	
     rm -rf /var/lib/apt/lists/*
+
+# downgrade libopencv-dev for ROS2
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        apt update && apt install -q -y --no-install-recommends --allow-downgrades \
+        libopencv-dev=4.5.4+dfsg-9ubuntu4 \
+        && \
+        apt clean && \
+        rm -rf /var/lib/apt/lists/* \
+        ; \
+    fi
 
 RUN pip3 install \
     influxdb-client \
